@@ -1,0 +1,126 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark font-weight-bold">
+          <i class="fas fa-user-circle text-primary mr-2"></i>User Profile
+        </h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          {% if user.is_staff or user.is_superuser %}
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+          {% else %}
+            <li class="breadcrumb-item"><a href="{% url 'user_event_list' %}">Events</a></li>
+          {% endif %}
+          <li class="breadcrumb-item active">Profile</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card card-primary shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h3 class="card-title font-weight-bold">Profile Details</h3>
+          </div>
+
+          <div class="card-body text-center pt-4">
+            
+            <!-- Profile Picture Display & Controls -->
+            <div class="mb-3">
+              <div class="d-inline-block position-relative">
+                {% if user.profile.image %}
+                  <img src="{{ user.profile.image.url }}" alt="Profile Picture" class="rounded-circle shadow" style="width: 120px; height: 120px; object-fit: cover;">
+                {% else %}
+                  <i class="fas fa-user-circle text-primary" style="font-size: 100px;"></i>
+                {% endif %}
+              </div>
+
+              <!-- Photo Actions: Add/Edit & Remove -->
+              <div class="mt-3 d-flex justify-content-center align-items-center gap-2">
+                <form method="POST" action="{% url 'upload_profile_pic' %}" enctype="multipart/form-data" id="picForm">
+                  {% csrf_token %}
+                  <input type="file" name="profile_image" id="id_profile_image" class="d-none" accept="image/*" onchange="document.getElementById('picForm').submit()">
+                  <label for="id_profile_image" class="btn btn-sm btn-outline-primary mb-0 font-weight-bold" style="cursor: pointer;">
+                    <i class="fas fa-camera mr-1"></i> {% if user.profile.image %}Edit Photo{% else %}Add Photo{% endif %}
+                  </label>
+                </form>
+
+                {% if user.profile.image %}
+                  <a href="{% url 'remove_profile_pic' %}" class="btn btn-sm btn-outline-danger font-weight-bold ml-2">
+                    <i class="fas fa-trash-alt mr-1"></i> Remove Photo
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+
+            <h3 class="font-weight-bold mb-0">{{ user.get_full_name|default:user.username }}</h3>
+            <p class="text-muted mb-4">@{{ user.username }}</p>
+
+            <hr>
+
+            <!-- User Info Table -->
+            <div class="table-responsive text-left px-3">
+              <table class="table table-borderless">
+                <tbody>
+                  <tr>
+                    <th style="width: 30%;">Username:</th>
+                    <td class="text-right">{{ user.username }}</td>
+                  </tr>
+                  <tr>
+                    <th>First Name:</th>
+                    <td class="text-right">{{ user.first_name|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th>Last Name:</th>
+                    <td class="text-right">{{ user.last_name|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th>Email:</th>
+                    <td class="text-right">{{ user.email|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th>Date Joined:</th>
+                    <td class="text-right">{{ user.date_joined|date:"M d, Y" }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          <!-- Form Action Footer -->
+          <div class="card-footer bg-light clearfix">
+            <div class="d-flex justify-content-between align-items-center w-100">
+              <a href="{% url 'edit_profile' %}" class="btn btn-info px-4 font-weight-bold">
+                <i class="fas fa-edit mr-1"></i> Edit Profile
+              </a>
+
+              {% if user.is_staff or user.is_superuser %}
+                <!-- ADMIN BACK BUTTON -->
+                <a href="{% url 'settings' %}" class="btn btn-secondary px-4">
+                  <i class="fas fa-arrow-left mr-1"></i> Back to Settings
+                </a>
+              {% else %}
+                <!-- USER BACK BUTTON -->
+                <a href="{% url 'user_event_list' %}" class="btn btn-secondary px-4">
+                  <i class="fas fa-arrow-left mr-1"></i> Back to Events
+                </a>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

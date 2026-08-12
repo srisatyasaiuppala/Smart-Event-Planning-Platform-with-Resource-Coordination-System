@@ -1,0 +1,282 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark font-weight-bold">
+          <i class="fas fa-tachometer-alt text-primary mr-2"></i>Dashboard
+        </h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item active">Dashboard</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+
+    {% if search %}
+      <!-- GLOBAL SEARCH RESULTS BANNER -->
+      <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+        <span><i class="fas fa-search mr-2"></i> Showing results for: <strong>"{{ search }}"</strong></span>
+        <a href="{% url 'dashboard' %}" class="btn btn-sm btn-light font-weight-bold text-dark">Clear Search</a>
+      </div>
+
+      <!-- 1. MATCHING EVENTS (Only shown if events exist) -->
+      {% if events %}
+      <div class="card card-primary shadow-sm mb-4">
+        <div class="card-header"><h3 class="card-title font-weight-bold"><i class="fas fa-calendar-alt mr-2"></i>Events ({{ events.count }})</h3></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+              <thead class="bg-primary text-white">
+                <tr><th>#</th><th>Name</th><th>Category</th><th>Start Date</th><th>End Date</th><th>Venue</th></tr>
+              </thead>
+              <tbody>
+                {% for event in events %}
+                  <tr>
+                    <td class="font-weight-bold">{{ forloop.counter }}</td>
+                    <td class="font-weight-bold">{{ event.name }}</td>
+                    <td>{{ event.category.name }}</td>
+                    <td>{{ event.event_date|date:"F j, Y" }}</td>
+                    <td>{% if event.end_date %}{{ event.end_date|date:"F j, Y" }}{% else %}-{% endif %}</td>
+                    <td>{{ event.venue|default:"-" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 2. MATCHING CATEGORIES (Only shown if categories exist) -->
+      {% if categories %}
+      <div class="card card-success shadow-sm mb-4">
+        <div class="card-header"><h3 class="card-title font-weight-bold"><i class="fas fa-folder mr-2"></i>Categories ({{ categories.count }})</h3></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+              <thead class="bg-success text-white">
+                <tr><th>#</th><th>Category Name</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                {% for category in categories %}
+                  <tr>
+                    <td class="font-weight-bold">{{ forloop.counter }}</td>
+                    <td class="font-weight-bold">{{ category.name }}</td>
+                    <td>{{ category.description|default:"-" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 3. MATCHING MEMBERS (Only shown if members exist) -->
+      {% if members %}
+      <div class="card card-warning shadow-sm mb-4">
+        <div class="card-header"><h3 class="card-title font-weight-bold text-white"><i class="fas fa-users mr-2"></i>Members / Registrations ({{ members.count }})</h3></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+              <thead class="bg-warning text-dark">
+                <tr><th>#</th><th>Full Name</th><th>Email</th><th>Phone</th><th>College</th><th>Event</th></tr>
+              </thead>
+              <tbody>
+                {% for member in members %}
+                  <tr>
+                    <td class="font-weight-bold">{{ forloop.counter }}</td>
+                    <td class="font-weight-bold">{{ member.full_name }}</td>
+                    <td>{{ member.email }}</td>
+                    <td>{{ member.phone }}</td>
+                    <td>{{ member.college }}</td>
+                    <td><span class="badge badge-info">{{ member.event.name }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 4. MATCHING ATTENDANCE (Only shown if attendance exists) -->
+      {% if attendance %}
+      <div class="card card-info shadow-sm mb-4">
+        <div class="card-header"><h3 class="card-title font-weight-bold"><i class="fas fa-clipboard-check mr-2"></i>Attendance Records ({{ attendance.count }})</h3></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+              <thead class="bg-info text-white">
+                <tr><th>#</th><th>Member</th><th>Event</th><th>Date</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {% for a in attendance %}
+                  <tr>
+                    <td class="font-weight-bold">{{ forloop.counter }}</td>
+                    <td class="font-weight-bold">{{ a.registration.full_name }}</td>
+                    <td>{{ a.registration.event.name }}</td>
+                    <td>{{ a.attendance_date|date:"F j, Y" }}</td>
+                    <td>
+                      {% if a.status == 'Present' %}
+                        <span class="badge badge-success">Present</span>
+                      {% else %}
+                        <span class="badge badge-danger">Absent</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- IF NOTHING MATCHED AT ALL -->
+      {% if not events and not categories and not members and not attendance %}
+        <div class="card shadow-sm text-center py-5">
+          <div class="card-body text-muted">
+            <i class="fas fa-search fa-3x mb-3 text-secondary"></i>
+            <h4 class="font-weight-bold text-dark">No matching results found</h4>
+            <p>We couldn't find any events, categories, members, or attendance records matching "<strong>{{ search }}</strong>".</p>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary mt-2"><i class="fas fa-arrow-left mr-1"></i> Back to Dashboard</a>
+          </div>
+        </div>
+      {% endif %}
+
+    {% else %}
+
+      <!-- DEFAULT DASHBOARD OVERVIEW -->
+      <div class="row">
+        <!-- Category Stat Box -->
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-info shadow-sm">
+            <div class="inner">
+              <h3>{{ total_categories }}</h3>
+              <p>Event Category</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-folder"></i>
+            </div>
+            <a href="{% url 'category_list' %}" class="small-box-footer">
+              More info <i class="fas fa-arrow-circle-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Events Stat Box -->
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-success shadow-sm">
+            <div class="inner">
+              <h3>{{ total_events }}</h3>
+              <p>Events</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <a href="{% url 'event_list' %}" class="small-box-footer">
+              More info <i class="fas fa-arrow-circle-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Registrations Stat Box -->
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-warning shadow-sm">
+            <div class="inner text-white">
+              <h3 class="text-white">{{ total_members }}</h3>
+              <p class="text-white">User Registrations</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <a href="{% url 'member_list' %}" class="small-box-footer text-white">
+              More info <i class="fas fa-arrow-circle-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Attendance Stat Box -->
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-danger shadow-sm">
+            <div class="inner">
+              <h3>{{ total_attendance }}</h3>
+              <p>Attendance Records</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-clipboard-check"></i>
+            </div>
+            <a href="{% url 'attendance_list' %}" class="small-box-footer">
+              More info <i class="fas fa-arrow-circle-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Default Event List Table Card -->
+      <div class="row mt-3">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header border-transparent d-flex justify-content-between align-items-center">
+              <h3 class="card-title font-weight-bold"><i class="fas fa-list text-primary mr-2"></i>Event List</h3>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                  <thead class="bg-primary text-white">
+                    <tr>
+                      <th style="width: 50px;">#</th>
+                      <th>Name</th>
+                      <th>Category</th>
+                      <th>Start Date</th>
+                      <th>End Date</th>
+                      <th>Venue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for event in events %}
+                    <tr>
+                      <td class="font-weight-bold">{{ forloop.counter }}</td>
+                      <td class="font-weight-bold">{{ event.name }}</td>
+                      <td>{{ event.category.name }}</td>
+                      <td>{{ event.event_date|date:"F j, Y" }}</td>
+                      <td>
+                        {% if event.end_date %}
+                          {{ event.end_date|date:"F j, Y" }}
+                        {% else %}
+                          -
+                        {% endif %}
+                      </td>
+                      <td>{{ event.venue|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="fas fa-calendar-times fa-2x mb-2 d-block"></i>
+                        No Events Found
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

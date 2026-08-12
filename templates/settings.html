@@ -1,0 +1,68 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">Settings</h1>
+    <ol class="breadcrumb float-sm-right mb-0">
+      <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+      <li class="breadcrumb-item active">Settings</li>
+    </ol>
+  </div>
+</div>
+
+<div class="content mt-3">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-md-10 col-lg-8">
+
+        <!-- 1. Edit Profile -->
+        <a href="{% url 'edit_profile' %}" class="text-decoration-none text-dark">
+          <div class="card shadow-sm border-0 mb-3 py-2 px-3 bg-white rounded" style="transition: transform 0.2s;">
+            <div class="card-body d-flex align-items-center">
+              <div class="mr-4 text-info">
+                <i class="fas fa-user-circle fa-2x"></i>
+              </div>
+              <div>
+                <h5 class="mb-1 font-weight-bold">Edit Profile</h5>
+                <p class="text-muted mb-0 small">View and update your profile information.</p>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- 2. Change Password -->
+        <a href="{% url 'change_password' %}" class="text-decoration-none text-dark">
+          <div class="card shadow-sm border-0 mb-3 py-2 px-3 bg-white rounded" style="transition: transform 0.2s;">
+            <div class="card-body d-flex align-items-center">
+              <div class="mr-4 text-info">
+                <i class="fas fa-key fa-2x"></i>
+              </div>
+              <div>
+                <h5 class="mb-1 font-weight-bold">Change Password</h5>
+                <p class="text-muted mb-0 small">Update your account password securely.</p>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- 3. Logout -->
+        <a href="{% url 'logout' %}" class="text-decoration-none text-dark">
+          <div class="card shadow-sm border-0 mb-3 py-2 px-3 bg-white rounded" style="transition: transform 0.2s;">
+            <div class="card-body d-flex align-items-center">
+              <div class="mr-4 text-info">
+                <i class="fas fa-sign-out-alt fa-2x"></i>
+              </div>
+              <div>
+                <h5 class="mb-1 font-weight-bold">Logout</h5>
+                <p class="text-muted mb-0 small">Sign out from your account.</p>
+              </div>
+            </div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

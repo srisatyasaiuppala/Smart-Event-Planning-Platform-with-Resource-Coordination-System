@@ -1,0 +1,784 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if user.is_staff or user.is_superuser %}Admin Panel{% else %}User Portal{% endif %} | Event Management</title>
+
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- AdminLTE Theme style -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+
+  <style>
+    /* Swatch Grid Layout */
+    .color-swatch-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .color-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .color-swatch:hover {
+      transform: scale(1.15);
+      border-color: #ffffff !important;
+    }
+    .color-swatch.active-swatch {
+      border-color: #ffffff !important;
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    }
+
+    /* PREVENT ACCENT COLOR FROM CHANGING USERNAME COLOR */
+    .user-panel .info a,
+    .user-panel .info a:hover {
+      color: #343a40 !important; /* Standard dark font color */
+    }
+    body.dark-mode .user-panel .info a,
+    body.dark-mode .user-panel .info a:hover {
+      color: #c2c7d0 !important; /* Standard light color in dark mode */
+    }
+
+    /* Dynamic Accent Color Themes for Cards and Primary Action Buttons across all pages */
+    body.accent-warning .card-primary .card-header,
+    body.accent-warning .card-header.bg-primary { background-color: #ffc107 !important; color: #1f2d3d !important; }
+    body.accent-warning .btn-action-submit { background-color: #ffc107 !important; border-color: #ffc107 !important; color: #1f2d3d !important; }
+
+    body.accent-info .card-primary .card-header,
+    body.accent-info .card-header.bg-primary { background-color: #17a2b8 !important; color: #fff !important; }
+    body.accent-info .btn-action-submit { background-color: #17a2b8 !important; border-color: #17a2b8 !important; color: #fff !important; }
+
+    body.accent-primary .card-primary .card-header,
+    body.accent-primary .card-header.bg-primary { background-color: #007bff !important; color: #fff !important; }
+    body.accent-primary .btn-action-submit { background-color: #007bff !important; border-color: #007bff !important; color: #fff !important; }
+
+    body.accent-success .card-primary .card-header,
+    body.accent-success .card-header.bg-primary { background-color: #28a745 !important; color: #fff !important; }
+    body.accent-success .btn-action-submit { background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; }
+
+    body.accent-danger .card-primary .card-header,
+    body.accent-danger .card-header.bg-primary { background-color: #dc3545 !important; color: #fff !important; }
+    body.accent-danger .btn-action-submit { background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; }
+
+    body.accent-teal .card-primary .card-header,
+    body.accent-teal .card-header.bg-primary { background-color: #20c997 !important; color: #fff !important; }
+    body.accent-teal .btn-action-submit { background-color: #20c997 !important; border-color: #20c997 !important; color: #fff !important; }
+
+    /* Dark Footer Custom Styling */
+    .custom-dark-footer {
+      background-color: #0d1117 !important;
+      color: #ffffff !important;
+      padding: 30px 15px !important;
+      text-align: center !important;
+      border-top: none !important;
+    }
+    .custom-dark-footer .social-icons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .custom-dark-footer .social-icon-btn {
+      width: 42px;
+      height: 42px;
+      background-color: #ffffff;
+      color: #0d1117;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      text-decoration: none;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+    .custom-dark-footer .social-icon-btn:hover {
+      transform: scale(1.1);
+      background-color: #e2e8f0;
+      color: #000;
+    }
+  </style>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <!-- Top Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-primary navbar-dark" id="mainNavbar">
+    <!-- Left navbar links -->
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_event_list' %}{% endif %}" class="nav-link">Accueil</a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="#" class="nav-link">Contact</a>
+      </li>
+    </ul>
+
+    <!-- Search Form -->
+    <form class="form-inline ml-3" method="GET" action="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_event_list' %}{% endif %}">
+      <div class="input-group input-group-sm">
+        <input class="form-control form-control-navbar" type="search" name="search" placeholder="Search" aria-label="Search">
+        <div class="input-group-append">
+          <button class="btn btn-navbar" type="submit">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Right navbar links -->
+    <ul class="navbar-nav ml-auto">
+      
+      <!-- 1. MESSAGES DROPDOWN -->
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#" id="messagesDropdown">
+          <i class="far fa-comments"></i>
+          {% if unread_messages_count and unread_messages_count > 0 %}
+            <span class="badge badge-danger navbar-badge">{{ unread_messages_count }}</span>
+          {% endif %}
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right shadow-sm" aria-labelledby="messagesDropdown">
+          <span class="dropdown-item dropdown-header font-weight-bold">
+            Recent Messages
+          </span>
+          <div class="dropdown-divider"></div>
+
+          {% for msg in recent_messages %}
+            <a href="{% url 'chat_room' %}" class="dropdown-item">
+              <div class="media">
+                <div class="media-body">
+                  <h3 class="dropdown-item-title font-weight-bold text-sm mb-1">
+                    {{ msg.sender.get_full_name|default:msg.sender.username }}
+                    <span class="float-right text-xs text-muted"><i class="far fa-clock mr-1"></i>{{ msg.timestamp|timesince }} ago</span>
+                  </h3>
+                  <p class="text-xs text-muted mb-0">{{ msg.content|truncatechars:35 }}</p>
+                </div>
+              </div>
+            </a>
+            <div class="dropdown-divider"></div>
+          {% empty %}
+            <div class="dropdown-item text-center text-muted py-3">
+              <i class="fas fa-comment-slash mr-1"></i> No messages yet
+            </div>
+            <div class="dropdown-divider"></div>
+          {% endfor %}
+
+          <a href="{% url 'chat_room' %}" class="dropdown-item dropdown-footer text-center font-weight-bold text-primary">View Full Chat Room</a>
+        </div>
+      </li>
+
+      <!-- 2. DYNAMIC NOTIFICATIONS DROPDOWN -->
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#" id="notificationsDropdown">
+          <i class="far fa-bell"></i>
+          {% if notifications_count and notifications_count > 0 %}
+            <span class="badge badge-warning navbar-badge">{{ notifications_count }}</span>
+          {% endif %}
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right shadow-sm" aria-labelledby="notificationsDropdown">
+          <span class="dropdown-item dropdown-header font-weight-bold">
+            {% if notifications_count %}{{ notifications_count }}{% else %}0{% endif %} Notification{% if notifications_count != 1 %}s{% endif %}
+          </span>
+          <div class="dropdown-divider"></div>
+
+          {% for note in notifications_list %}
+            <a href="{% url 'mark_notification_read' note.id %}" class="dropdown-item">
+              <i class="{{ note.icon|default:'fas fa-bell' }} mr-2"></i> <strong>{{ note.title }}</strong>
+              <p class="text-xs text-muted mb-0 pl-4">{{ note.message|truncatechars:35 }}</p>
+              <span class="float-right text-muted text-xs">{{ note.created_at|timesince }} ago</span>
+            </a>
+            <div class="dropdown-divider"></div>
+          {% empty %}
+            <div class="dropdown-item text-center text-muted py-3">
+              <i class="fas fa-check-circle text-success mr-1"></i> No unread notifications
+            </div>
+            <div class="dropdown-divider"></div>
+          {% endfor %}
+
+          <a href="{% url 'all_notifications' %}" class="dropdown-item dropdown-footer text-center">See All Notifications</a>
+        </div>
+      </li>
+
+      <!-- CUSTOMIZE DRAWER TOGGLE (ADMIN ONLY) -->
+      {% if user.is_staff or user.is_superuser %}
+        <li class="nav-item">
+          <a class="nav-link" data-widget="control-sidebar" href="#" role="button">
+            <i class="fas fa-th-large"></i>
+          </a>
+        </li>
+      {% endif %}
+
+      <!-- 3. PROFILE DROPDOWN -->
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#" id="userDropdown">
+          <i class="fas fa-user-circle fa-lg"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-md dropdown-menu-right shadow border-0" aria-labelledby="userDropdown">
+          <a href="{% url 'profile' %}" class="dropdown-item py-2">
+            <i class="fas fa-user mr-2 text-dark"></i> Profile
+          </a>
+          
+          {% if user.is_staff or user.is_superuser %}
+            <div class="dropdown-divider my-1"></div>
+            <a href="{% url 'settings' %}" class="dropdown-item py-2">
+              <i class="fas fa-user-cog mr-2 text-dark"></i> Settings
+            </a>
+          {% endif %}
+
+          <div class="dropdown-divider my-1"></div>
+          <a href="{% url 'logout' %}" class="dropdown-item py-2">
+            <i class="fas fa-sign-out-alt mr-2 text-dark"></i> Logout
+          </a>
+        </div>
+      </li>
+
+    </ul>
+  </nav>
+
+  <!-- Main Left Sidebar -->
+  <aside class="main-sidebar sidebar-light-primary elevation-4" id="mainSidebar">
+    <a href="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_event_list' %}{% endif %}" class="brand-link">
+      <span class="brand-text font-weight-light pl-3">
+        <strong>{% if user.is_staff or user.is_superuser %}Admin Panel{% else %}User Portal{% endif %}</strong>
+      </span>
+    </a>
+
+    <div class="sidebar">
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
+        <div class="image">
+          <a href="{% url 'profile' %}">
+            {% if request.user.profile.image %}
+              <img src="{{ request.user.profile.image.url }}" class="img-circle elevation-2" alt="User Image" style="width: 35px; height: 35px; object-fit: cover;">
+            {% else %}
+              <i class="fas fa-user-circle fa-2x text-secondary"></i>
+            {% endif %}
+          </a>
+        </div>
+        <div class="info">
+          <a href="{% url 'profile' %}" class="d-block font-weight-bold">
+            {{ user.get_full_name|default:user.username }}
+          </a>
+        </div>
+      </div>
+
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+
+          {% if user.is_staff or user.is_superuser %}
+            <!-- ================= ADMIN SIDEBAR MENU ================= -->
+            
+            <li class="nav-item">
+              <a href="{% url 'dashboard' %}" class="nav-link">
+                <i class="nav-icon fas fa-tachometer-alt"></i>
+                <p>Dashboard</p>
+              </a>
+            </li>
+
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-folder"></i>
+                <p>Event Category<i class="right fas fa-angle-left"></i></p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{% url 'create_category' %}" class="nav-link">
+                    <i class="far fa-edit nav-icon"></i>
+                    <p>Create Category</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{% url 'category_list' %}" class="nav-link">
+                    <i class="fas fa-list nav-icon"></i>
+                    <p>Category List</p>
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-calendar-alt"></i>
+                <p>Events<i class="right fas fa-angle-left"></i></p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{% url 'create_event' %}" class="nav-link">
+                    <i class="far fa-edit nav-icon"></i>
+                    <p>Create Event</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{% url 'event_list' %}" class="nav-link">
+                    <i class="fas fa-list nav-icon"></i>
+                    <p>Event List</p>
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-users"></i>
+                <p>Members<i class="right fas fa-angle-left"></i></p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{% url 'register_member' %}" class="nav-link">
+                    <i class="fas fa-user-plus nav-icon"></i>
+                    <p>Register Member</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{% url 'member_list' %}" class="nav-link">
+                    <i class="fas fa-list nav-icon"></i>
+                    <p>Member List</p>
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-clipboard-check"></i>
+                <p>Attendance<i class="right fas fa-angle-left"></i></p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{% url 'mark_attendance' %}" class="nav-link">
+                    <i class="fas fa-check-square nav-icon"></i>
+                    <p>Mark Attendance</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="{% url 'attendance_list' %}" class="nav-link">
+                    <i class="fas fa-list nav-icon"></i>
+                    <p>Attendance List</p>
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+          {% else %}
+            <!-- ================= REGULAR USER SIDEBAR MENU ================= -->
+
+            <li class="nav-item">
+              <a href="{% url 'user_event_list' %}" class="nav-link">
+                <i class="nav-icon fas fa-calendar-alt text-primary"></i>
+                <p>Upcoming Events</p>
+              </a>
+            </li>
+            
+            <li class="nav-item">
+              <a href="{% url 'my_registered_events' %}" class="nav-link">
+                <i class="nav-icon fas fa-calendar-check text-info"></i>
+                <p>Registered Events</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="{% url 'register_member' %}" class="nav-link">
+                <i class="nav-icon fas fa-user-plus text-success"></i>
+                <p>Register for Event</p>
+              </a>
+            </li>
+
+          {% endif %}
+
+          <!-- LOGOUT -->
+          <li class="nav-item mt-3 border-top pt-2">
+            <a href="{% url 'logout' %}" class="nav-link text-danger">
+              <i class="nav-icon fas fa-sign-out-alt"></i>
+              <p>Logout</p>
+            </a>
+          </li>
+
+        </ul>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Control Sidebar (Customize Drawer) -->
+  <aside class="control-sidebar control-sidebar-dark p-3" style="background-color: #1a2332; color: #b0bec5; overflow-y: auto; max-height: 100vh;">
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
+      <h5 class="m-0 text-white font-weight-bold" style="font-size: 1.1rem;">
+        <i class="fas fa-sliders-h mr-2"></i>Customize
+      </h5>
+      <button type="button" class="close text-white" data-widget="control-sidebar">&times;</button>
+    </div>
+
+    <!-- Appearance Mode -->
+    <div class="mb-4">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">APPEARANCE</label>
+      <div class="btn-group w-100" role="group">
+        <button type="button" class="btn btn-sm btn-outline-secondary text-white active" id="btn-mode-light"><i class="fas fa-sun mr-1"></i> Light</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary text-white" id="btn-mode-dark"><i class="fas fa-moon mr-1"></i> Dark</button>
+      </div>
+    </div>
+
+    <!-- Font Size Controls -->
+    <div class="mb-4">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">FONT SIZE</label>
+      <div class="d-flex align-items-center justify-content-between bg-dark p-2 rounded border border-secondary">
+        <button type="button" class="btn btn-secondary btn-sm px-3" id="btn-font-dec">A-</button>
+        <span id="font-size-val" class="font-weight-bold text-sm text-white">16px</span>
+        <button type="button" class="btn btn-secondary btn-sm px-3" id="btn-font-inc">A+</button>
+      </div>
+    </div>
+
+    <!-- Accent Color Swatches -->
+    <div class="mb-4">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">ACCENT COLOR</label>
+      <div class="d-flex justify-content-between align-items-center px-1">
+        <span class="accent-swatch bg-warning rounded-circle" data-accent="accent-warning" style="width: 22px; height: 22px; cursor: pointer;"></span>
+        <span class="accent-swatch bg-info rounded-circle" data-accent="accent-info" style="width: 22px; height: 22px; cursor: pointer;"></span>
+        <span class="accent-swatch bg-primary rounded-circle" data-accent="accent-primary" style="width: 22px; height: 22px; cursor: pointer;"></span>
+        <span class="accent-swatch bg-success rounded-circle d-flex align-items-center justify-content-center active-swatch" data-accent="accent-success" style="width: 22px; height: 22px; cursor: pointer;"><i class="fas fa-check text-white" style="font-size: 10px;"></i></span>
+        <span class="accent-swatch bg-danger rounded-circle" data-accent="accent-danger" style="width: 22px; height: 22px; cursor: pointer;"></span>
+        <span class="accent-swatch bg-teal rounded-circle" data-accent="accent-teal" style="width: 22px; height: 22px; cursor: pointer;"></span>
+      </div>
+    </div>
+
+    <!-- Navbar Variants -->
+    <div class="mb-4">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">NAVBAR VARIANTS</label>
+      <div class="color-swatch-grid">
+        <span class="color-swatch bg-primary navbar-swatch" data-navbar="navbar-primary navbar-dark"></span>
+        <span class="color-swatch bg-success navbar-swatch" data-navbar="navbar-success navbar-dark"></span>
+        <span class="color-swatch bg-danger navbar-swatch" data-navbar="navbar-danger navbar-dark"></span>
+        <span class="color-swatch bg-warning navbar-swatch" data-navbar="navbar-warning navbar-light"></span>
+        <span class="color-swatch bg-info navbar-swatch" data-navbar="navbar-info navbar-dark"></span>
+        <span class="color-swatch bg-dark navbar-swatch" data-navbar="navbar-dark navbar-dark"></span>
+        <span class="color-swatch bg-white border navbar-swatch" data-navbar="navbar-white navbar-light"></span>
+      </div>
+    </div>
+
+    <!-- Sidebar Variants -->
+    <div class="mb-4">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">SIDEBAR VARIANTS</label>
+      <div class="color-swatch-grid">
+        <span class="color-swatch bg-dark sidebar-swatch" data-sidebar="sidebar-dark-primary"></span>
+        <span class="color-swatch bg-info sidebar-swatch" data-sidebar="sidebar-dark-info"></span>
+        <span class="color-swatch bg-success sidebar-swatch" data-sidebar="sidebar-dark-success"></span>
+        <span class="color-swatch bg-danger sidebar-swatch" data-sidebar="sidebar-dark-danger"></span>
+        <span class="color-swatch bg-warning sidebar-swatch" data-sidebar="sidebar-dark-warning"></span>
+        <span class="color-swatch bg-light border sidebar-swatch" data-sidebar="sidebar-light-primary"></span>
+      </div>
+    </div>
+
+    <!-- Footer Variants -->
+    <div class="mb-4">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">FOOTER VARIANTS</label>
+      <div class="color-swatch-grid">
+        <span class="color-swatch bg-dark footer-swatch" data-footer="bg-dark text-white"></span>
+        <span class="color-swatch bg-info footer-swatch" data-footer="bg-info text-white"></span>
+        <span class="color-swatch bg-success footer-swatch" data-footer="bg-success text-white"></span>
+        <span class="color-swatch bg-danger footer-swatch" data-footer="bg-danger text-white"></span>
+        <span class="color-swatch bg-warning footer-swatch" data-footer="bg-warning text-dark"></span>
+        <span class="color-swatch bg-white border footer-swatch" data-footer="bg-white text-dark"></span>
+      </div>
+    </div>
+
+    <!-- Density Controls -->
+    <div class="mb-4">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">DENSITY</label>
+      <div class="btn-group w-100" role="group">
+        <button type="button" class="btn btn-sm btn-outline-secondary text-white active" id="btn-density-default">Default</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary text-white" id="btn-density-compact">Compact</button>
+      </div>
+    </div>
+
+    <!-- Sidebar Toggles -->
+    <div class="mb-3">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">SIDEBAR OPTIONS</label>
+      <div class="custom-control custom-switch d-flex justify-content-between align-items-center mb-2 pl-0">
+        <span class="small text-light">Collapse sidebar</span>
+        <input type="checkbox" class="custom-control-input" id="sw-collapse">
+        <label class="custom-control-label" for="sw-collapse"></label>
+      </div>
+      <div class="custom-control custom-switch d-flex justify-content-between align-items-center mb-2 pl-0">
+        <span class="small text-light">No Navbar Border</span>
+        <input type="checkbox" class="custom-control-input" id="sw-no-border">
+        <label class="custom-control-label" for="sw-no-border"></label>
+      </div>
+      <div class="custom-control custom-switch d-flex justify-content-between align-items-center mb-2 pl-0">
+        <span class="small text-light">Body Small Text</span>
+        <input type="checkbox" class="custom-control-input" id="sw-body-small">
+        <label class="custom-control-label" for="sw-body-small"></label>
+      </div>
+      <div class="custom-control custom-switch d-flex justify-content-between align-items-center mb-2 pl-0">
+        <span class="small text-light">Navbar Small Text</span>
+        <input type="checkbox" class="custom-control-input" id="sw-nav-small" checked>
+        <label class="custom-control-label" for="sw-nav-small"></label>
+      </div>
+      <div class="custom-control custom-switch d-flex justify-content-between align-items-center mb-2 pl-0">
+        <span class="small text-light">Sidebar Small Text</span>
+        <input type="checkbox" class="custom-control-input" id="sw-side-small">
+        <label class="custom-control-label" for="sw-side-small"></label>
+      </div>
+      <div class="custom-control custom-switch d-flex justify-content-between align-items-center mb-2 pl-0">
+        <span class="small text-light">Sidebar Flat</span>
+        <input type="checkbox" class="custom-control-input" id="sw-side-flat">
+        <label class="custom-control-label" for="sw-side-flat"></label>
+      </div>
+      <div class="custom-control custom-switch d-flex justify-content-between align-items-center mb-2 pl-0">
+        <span class="small text-light">Sidebar Legacy</span>
+        <input type="checkbox" class="custom-control-input" id="sw-side-legacy">
+        <label class="custom-control-label" for="sw-side-legacy"></label>
+      </div>
+    </div>
+
+    <!-- Clear / Reset Button -->
+    <div class="mt-4 pt-3 border-top border-secondary">
+      <button type="button" class="btn btn-outline-danger btn-block font-weight-bold" id="btn-reset-customizer">
+        <i class="fas fa-undo mr-1"></i> Clear / Reset All
+      </button>
+    </div>
+  </aside>
+
+  <!-- Content Wrapper -->
+  <div class="content-wrapper p-3">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% block content %}
+    {% endblock %}
+  </div>
+
+  <!-- Footer Matching 4th Pic Style -->
+  <footer class="main-footer custom-dark-footer">
+    <p class="mb-2 font-weight-normal">&copy; 2026 Event Registration Platform. All Rights Reserved.</p>
+    
+    <div class="social-icons">
+      <a href="#" class="social-icon-btn"><i class="far fa-envelope"></i></a>
+      <a href="#" class="social-icon-btn"><i class="fab fa-facebook-f"></i></a>
+      <a href="#" class="social-icon-btn"><i class="fab fa-instagram"></i></a>
+      <a href="#" class="social-icon-btn"><i class="fab fa-linkedin-in"></i></a>
+      <a href="#" class="social-icon-btn"><i class="fab fa-github"></i></a>
+    </div>
+
+    <p class="mb-0 text-muted" style="font-size: 15px;">
+      Developed by <strong class="text-white">Sri Satya Sai Uppala</strong>
+    </p>
+  </footer>
+
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+
+<script>
+$(document).ready(function() {
+
+  $('.dropdown-toggle, [data-toggle="dropdown"]').dropdown();
+
+  let currentFontSize = parseInt(localStorage.getItem('app-font-size')) || 16;
+
+  function updateFontSize(size) {
+    currentFontSize = size;
+    $('html').css('font-size', currentFontSize + 'px');
+    $('#font-size-val').text(currentFontSize + 'px');
+    localStorage.setItem('app-font-size', currentFontSize);
+  }
+
+  // Load stored preferences
+  updateFontSize(currentFontSize);
+
+  if (localStorage.getItem('theme-mode') === 'dark') {
+    $('body').addClass('dark-mode');
+    $('#btn-mode-dark').addClass('active').siblings().removeClass('active');
+  }
+
+  if (localStorage.getItem('density') === 'compact') {
+    $('body').addClass('text-sm');
+    $('.nav-sidebar').addClass('nav-compact');
+    $('#btn-density-compact').addClass('active').siblings().removeClass('active');
+  }
+
+  if (localStorage.getItem('sw-collapse')) {
+    $('body').addClass('sidebar-collapse');
+    $('#sw-collapse').prop('checked', true);
+  }
+
+  if (localStorage.getItem('sw-no-border')) {
+    $('#mainNavbar').addClass('border-bottom-0');
+    $('#sw-no-border').prop('checked', true);
+  }
+
+  if (localStorage.getItem('sw-body-small')) {
+    $('body').addClass('text-sm');
+    $('#sw-body-small').prop('checked', true);
+  }
+
+  if (localStorage.getItem('sw-nav-small')) {
+    $('#mainNavbar').addClass('text-sm');
+    $('#sw-nav-small').prop('checked', true);
+  }
+
+  if (localStorage.getItem('sw-side-small')) {
+    $('.nav-sidebar').addClass('text-sm');
+    $('#sw-side-small').prop('checked', true);
+  }
+
+  if (localStorage.getItem('sw-side-flat')) {
+    $('.nav-sidebar').addClass('nav-flat');
+    $('#sw-side-flat').prop('checked', true);
+  }
+
+  if (localStorage.getItem('sw-side-legacy')) {
+    $('.nav-sidebar').addClass('nav-legacy');
+    $('#sw-side-legacy').prop('checked', true);
+  }
+
+  const savedNavbar = localStorage.getItem('navbar-variant');
+  if (savedNavbar) {
+    $('#mainNavbar').attr('class', 'main-header navbar navbar-expand ' + savedNavbar);
+  }
+
+  const savedSidebar = localStorage.getItem('sidebar-variant');
+  if (savedSidebar) {
+    $('#mainSidebar').attr('class', 'main-sidebar elevation-4 ' + savedSidebar);
+  }
+
+  const savedFooter = localStorage.getItem('footer-variant');
+  if (savedFooter) {
+    $('#mainFooter').attr('class', 'main-footer ' + savedFooter);
+  }
+
+  const savedAccent = localStorage.getItem('accent-color') || 'accent-primary';
+  $('body').removeClass(function(i, c) { return (c.match(/(^|\s)accent-\S+/g) || []).join(' '); }).addClass(savedAccent);
+
+  $('.accent-swatch').each(function() {
+    if ($(this).data('accent') === savedAccent) {
+      $(this).addClass('active-swatch').html('<i class="fas fa-check text-white" style="font-size: 10px;"></i>');
+    } else {
+      $(this).removeClass('active-swatch').html('');
+    }
+  });
+
+  // Event Handlers
+  $('#btn-font-inc').click(function() {
+    if (currentFontSize < 22) updateFontSize(currentFontSize + 1);
+  });
+
+  $('#btn-font-dec').click(function() {
+    if (currentFontSize > 12) updateFontSize(currentFontSize - 1);
+  });
+
+  $('.navbar-swatch').click(function() {
+    const variant = $(this).data('navbar');
+    $('#mainNavbar').attr('class', 'main-header navbar navbar-expand ' + variant);
+    localStorage.setItem('navbar-variant', variant);
+  });
+
+  $('.sidebar-swatch').click(function() {
+    const variant = $(this).data('sidebar');
+    $('#mainSidebar').attr('class', 'main-sidebar elevation-4 ' + variant);
+    localStorage.setItem('sidebar-variant', variant);
+  });
+
+  $('.footer-swatch').click(function() {
+    const variant = $(this).data('footer');
+    $('#mainFooter').attr('class', 'main-footer ' + variant);
+    localStorage.setItem('footer-variant', variant);
+  });
+
+  $('#btn-mode-light').click(function() {
+    $('body').removeClass('dark-mode');
+    localStorage.setItem('theme-mode', 'light');
+    $(this).addClass('active').siblings().removeClass('active');
+  });
+
+  $('#btn-mode-dark').click(function() {
+    $('body').addClass('dark-mode');
+    localStorage.setItem('theme-mode', 'dark');
+    $(this).addClass('active').siblings().removeClass('active');
+  });
+
+  $('#btn-density-default').click(function() {
+    $('body').removeClass('text-sm');
+    $('.nav-sidebar').removeClass('nav-compact');
+    localStorage.setItem('density', 'default');
+    $(this).addClass('active').siblings().removeClass('active');
+  });
+
+  $('#btn-density-compact').click(function() {
+    $('body').addClass('text-sm');
+    $('.nav-sidebar').addClass('nav-compact');
+    localStorage.setItem('density', 'compact');
+    $(this).addClass('active').siblings().removeClass('active');
+  });
+
+  $('.accent-swatch').click(function() {
+    const accent = $(this).data('accent');
+    $('body').removeClass(function(i, c) { return (c.match(/(^|\s)accent-\S+/g) || []).join(' '); }).addClass(accent);
+    localStorage.setItem('accent-color', accent);
+    $('.accent-swatch').removeClass('active-swatch').html('');
+    $(this).addClass('active-swatch').html('<i class="fas fa-check text-white" style="font-size: 10px;"></i>');
+  });
+
+  $('#sw-collapse').change(function() {
+    $('body').toggleClass('sidebar-collapse', this.checked);
+    this.checked ? localStorage.setItem('sw-collapse', '1') : localStorage.removeItem('sw-collapse');
+  });
+
+  $('#sw-no-border').change(function() {
+    $('#mainNavbar').toggleClass('border-bottom-0', this.checked);
+    this.checked ? localStorage.setItem('sw-no-border', '1') : localStorage.removeItem('sw-no-border');
+  });
+
+  $('#sw-body-small').change(function() {
+    $('body').toggleClass('text-sm', this.checked);
+    this.checked ? localStorage.setItem('sw-body-small', '1') : localStorage.removeItem('sw-body-small');
+  });
+
+  $('#sw-nav-small').change(function() {
+    $('#mainNavbar').toggleClass('text-sm', this.checked);
+    this.checked ? localStorage.setItem('sw-nav-small', '1') : localStorage.removeItem('sw-nav-small');
+  });
+
+  $('#sw-side-small').change(function() {
+    $('.nav-sidebar').toggleClass('text-sm', this.checked);
+    this.checked ? localStorage.setItem('sw-side-small', '1') : localStorage.removeItem('sw-side-small');
+  });
+
+  $('#sw-side-flat').change(function() {
+    $('.nav-sidebar').toggleClass('nav-flat', this.checked);
+    this.checked ? localStorage.setItem('sw-side-flat', '1') : localStorage.removeItem('sw-side-flat');
+  });
+
+  $('#sw-side-legacy').change(function() {
+    $('.nav-sidebar').toggleClass('nav-legacy', this.checked);
+    this.checked ? localStorage.setItem('sw-side-legacy', '1') : localStorage.removeItem('sw-side-legacy');
+  });
+
+  // Reset / Clear Customizer
+  $('#btn-reset-customizer').click(function() {
+    localStorage.clear();
+    location.reload();
+  });
+
+});
+</script>
+</body>
+</html>

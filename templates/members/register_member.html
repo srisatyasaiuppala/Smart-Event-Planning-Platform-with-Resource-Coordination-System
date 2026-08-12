@@ -1,0 +1,132 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<!-- Content Header -->
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark font-weight-bold">
+          <i class="fas fa-user-plus text-primary mr-2"></i>{% if edit_mode %}Edit Member{% else %}Register Member{% endif %}
+        </h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'member_list' %}">Member List</a></li>
+          <li class="breadcrumb-item active">{% if edit_mode %}Edit Member{% else %}Register Member{% endif %}</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <!-- FULL WIDTH COLUMN -->
+      <div class="col-12">
+        <div class="card card-primary shadow-sm">
+          <div class="card-header">
+            <h3 class="card-title font-weight-bold">Member Details</h3>
+          </div>
+          
+          <form method="POST" action="">
+            {% csrf_token %}
+            <div class="card-body">
+              
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {% for error in form.non_field_errors %}
+                    <p class="mb-0"><i class="fas fa-exclamation-triangle mr-2"></i>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <!-- Event Field -->
+              <div class="form-group mb-3">
+                <label for="id_event" class="font-weight-bold">Event <span class="text-danger">*</span></label>
+                {{ form.event }}
+                {% if form.event.errors %}
+                  {% for error in form.event.errors %}
+                    <div class="text-danger small mt-1 font-weight-bold">
+                      <i class="fas fa-exclamation-circle mr-1"></i>{{ error }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+
+              <!-- Full Name Field -->
+              <div class="form-group mb-3">
+                <label for="id_full_name" class="font-weight-bold">Full Name <span class="text-danger">*</span></label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                  {% for error in form.full_name.errors %}
+                    <div class="text-danger small mt-1 font-weight-bold">
+                      <i class="fas fa-exclamation-circle mr-1"></i>{{ error }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+
+              <!-- Email Field (Displays duplicate errors) -->
+              <div class="form-group mb-3">
+                <label for="id_email" class="font-weight-bold">Email Address <span class="text-danger">*</span></label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                  {% for error in form.email.errors %}
+                    <div class="text-danger small mt-1 font-weight-bold">
+                      <i class="fas fa-exclamation-circle mr-1"></i>{{ error }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+
+              <!-- Phone Field (Displays duplicate errors) -->
+              <div class="form-group mb-3">
+                <label for="id_phone" class="font-weight-bold">Phone Number <span class="text-danger">*</span></label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                  {% for error in form.phone.errors %}
+                    <div class="text-danger small mt-1 font-weight-bold">
+                      <i class="fas fa-exclamation-circle mr-1"></i>{{ error }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+
+              <!-- College Field -->
+              <div class="form-group mb-3">
+                <label for="id_college" class="font-weight-bold">College / Institution</label>
+                {{ form.college }}
+                {% if form.college.errors %}
+                  {% for error in form.college.errors %}
+                    <div class="text-danger small mt-1 font-weight-bold">
+                      <i class="fas fa-exclamation-circle mr-1"></i>{{ error }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+
+            </div>
+
+            <!-- Form Action Footer (Cancel Left, Green Register/Update Member Right) -->
+            <div class="card-footer bg-light clearfix">
+              <div class="d-flex justify-content-between align-items-center w-100">
+                <a href="{% url 'member_list' %}" class="btn btn-secondary">
+                  <i class="fas fa-arrow-left mr-1"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-action-submit px-4 font-weight-bold ml-auto">
+                  <i class="fas fa-user-plus mr-1"></i> {% if edit_mode %}Update Member{% else %}Register Member{% endif %}
+                </button>
+              </div>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

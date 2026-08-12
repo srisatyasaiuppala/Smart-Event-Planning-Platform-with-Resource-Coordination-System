@@ -1,0 +1,114 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark font-weight-bold">
+          <i class="fas fa-calendar-alt text-primary mr-2"></i>Event List
+        </h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item active">Event List</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title font-weight-bold">All Events</h3>
+        <div class="card-tools ml-auto">
+          <a href="{% url 'create_event' %}" class="btn btn-success btn-sm font-weight-bold">
+            <i class="fas fa-plus mr-1"></i> Create Event
+          </a>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- Search Bar -->
+        <form method="GET" class="mb-4">
+          <div class="input-group">
+            <input
+              type="text"
+              name="search"
+              placeholder="Search event name, category, or venue..."
+              value="{{ search }}"
+              class="form-control"
+            >
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search mr-1"></i> Search
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Events Table -->
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0">
+            <thead class="bg-primary text-white">
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Category</th>
+                <th>Event Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Venue</th>
+                <th>Status</th>
+                <th style="width: 200px;" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for event in events %}
+              <tr>
+                <td class="font-weight-bold">{{ forloop.counter }}</td>
+                <td>{{ event.category.name }}</td>
+                <td class="font-weight-bold">{{ event.name }}</td>
+                <td>{{ event.event_date|date:"M d, Y" }}</td>
+                <td>{{ event.event_time|time:"h:i A" }}</td>
+                <td>{{ event.venue }}</td>
+                <td>
+                  {% if event.status == 'Completed' %}
+                    <span class="badge badge-success px-2 py-1">Completed</span>
+                  {% else %}
+                    <span class="badge badge-info px-2 py-1">Upcoming</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  <a href="{% url 'event_detail' event.id %}" class="btn btn-info btn-sm mr-1" title="View">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="{% url 'edit_event' event.id %}" class="btn btn-warning btn-sm mr-1" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a href="{% url 'delete_event' event.id %}"
+                     class="btn btn-danger btn-sm"
+                     onclick="return confirm('Delete this event?');"
+                     title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center py-4 text-muted">
+                  <i class="fas fa-calendar-times fa-2x mb-2 d-block"></i>
+                  No Events Available
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

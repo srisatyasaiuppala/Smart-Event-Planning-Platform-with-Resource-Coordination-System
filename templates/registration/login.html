@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .role-selector {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: #f0f4f8;
+            padding: 6px;
+            border-radius: 8px;
+        }
+        .role-option {
+            flex: 1;
+            text-align: center;
+        }
+        .role-option input[type="radio"] {
+            display: none;
+        }
+        .role-option label {
+            display: block;
+            padding: 8px 12px;
+            margin: 0;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.3s ease;
+        }
+        .role-option input[type="radio"]:checked + label {
+            background: #2563eb;
+            color: white;
+        }
+        .alert-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .forgot-link {
+            text-align: right;
+            margin-top: -5px;
+            margin-bottom: 18px;
+        }
+        .forgot-link a {
+            font-size: 14px;
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .forgot-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="auth-container">
+
+    <div class="auth-card">
+
+        <h2>Login</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="role-selector">
+                <div class="role-option">
+                    <input type="radio" id="role_user" name="role" value="user" checked>
+                    <label for="role_user">User</label>
+                </div>
+                <div class="role-option">
+                    <input type="radio" id="role_admin" name="role" value="admin">
+                    <label for="role_admin">Admin</label>
+                </div>
+            </div>
+
+            {{ form.as_p }}
+
+            <div class="forgot-link">
+                <a href="{% url 'forgot_password' %}">Forgot Password?</a>
+            </div>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <p>
+            Don't have an account?
+            <a href="{% url 'signup' %}">Sign Up</a>
+        </p>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,66 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+<div class="card shadow">
+
+<div class="card-header bg-primary text-white">
+
+<h3>{{ event.name }}</h3>
+
+</div>
+
+<div class="card-body">
+
+<table class="table">
+
+<tr>
+<th>Category</th>
+<td>{{ event.category }}</td>
+</tr>
+
+<tr>
+<th>Description</th>
+<td>{{ event.description }}</td>
+</tr>
+
+<tr>
+<th>Date</th>
+<td>{{ event.event_date }}</td>
+</tr>
+
+<tr>
+<th>Time</th>
+<td>{{ event.event_time }}</td>
+</tr>
+
+<tr>
+<th>Venue</th>
+<td>{{ event.venue }}</td>
+</tr>
+
+<tr>
+<th>Capacity</th>
+<td>{{ event.capacity }}</td>
+</tr>
+
+<tr>
+<th>Status</th>
+<td>{{ event.status }}</td>
+</tr>
+
+</table>
+
+<a href="{% url 'event_list' %}" class="btn btn-secondary">
+Back
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

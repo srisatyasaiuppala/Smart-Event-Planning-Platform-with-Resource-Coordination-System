@@ -1,0 +1,65 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark font-weight-bold">
+          <i class="fas fa-comments text-primary mr-2"></i>Community Chat
+        </h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item active">Chat</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+    <div class="card card-primary card-outline direct-chat direct-chat-primary shadow-sm">
+      <div class="card-header">
+        <h3 class="card-title font-weight-bold">Event Management Group Chat</h3>
+      </div>
+      <div class="card-body">
+        <div class="direct-chat-messages p-3" style="height: 400px; overflow-y: auto;">
+          {% for msg in chat_messages %}
+            <div class="direct-chat-msg {% if msg.sender == request.user %}right{% endif %} mb-3">
+              <div class="direct-chat-infos clearfix">
+                <span class="direct-chat-name {% if msg.sender == request.user %}float-right{% else %}float-left{% endif %} font-weight-bold">
+                  {{ msg.sender.get_full_name|default:msg.sender.username }}
+                </span>
+                <span class="direct-chat-timestamp {% if msg.sender == request.user %}float-left{% else %}float-right{% endif %} text-muted text-xs">
+                  {{ msg.timestamp|date:"M d, g:i a" }}
+                </span>
+              </div>
+              <div class="direct-chat-text bg-light border p-2 rounded mt-1">
+                {{ msg.content }}
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-center text-muted mt-5">No messages in the chat yet. Start the conversation below!</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card-footer">
+        <form action="{% url 'send_message' %}" method="POST">
+          {% csrf_token %}
+          <div class="input-group">
+            <input type="text" name="content" placeholder="Type a message..." class="form-control" required autocomplete="off">
+            <span class="input-group-append">
+              <button type="submit" class="btn btn-primary font-weight-bold">
+                <i class="fas fa-paper-plane mr-1"></i> Send
+              </button>
+            </span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

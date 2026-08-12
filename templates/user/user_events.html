@@ -1,0 +1,67 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-3 align-items-center">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark font-weight-bold">
+          <i class="fas fa-calendar-alt text-primary mr-2"></i>Upcoming Events
+        </h1>
+      </div>
+      <div class="col-sm-6 text-right">
+        <span class="badge badge-info px-3 py-2">User Access Mode</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+
+    <!-- Search Form -->
+    <form method="GET" class="mb-4">
+      <div class="input-group">
+        <input type="text" name="search" class="form-control" placeholder="Search events by name, category, or venue..." value="{{ search }}">
+        <div class="input-group-append">
+          <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Search</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Event Cards Grid -->
+    <div class="row">
+      {% for event in events %}
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-primary text-white font-weight-bold">
+              {{ event.category.name|default:"General Event" }}
+            </div>
+            <div class="card-body">
+              <h5 class="card-title font-weight-bold text-dark mb-2">{{ event.name }}</h5>
+              <p class="card-text text-muted text-sm">{{ event.description|truncatechars:100 }}</p>
+              
+              <ul class="list-unstyled text-sm mb-3">
+                <li class="mb-1"><i class="fas fa-map-marker-alt text-danger mr-2"></i><strong>Venue:</strong> {{ event.venue }}</li>
+                <li class="mb-1"><i class="fas fa-calendar text-info mr-2"></i><strong>Date:</strong> {{ event.event_date|date:"M d, Y" }}</li>
+                <li><i class="fas fa-clock text-warning mr-2"></i><strong>Time:</strong> {{ event.event_time }}</li>
+              </ul>
+            </div>
+            <div class="card-footer bg-light border-0">
+              <a href="{% url 'register_member' %}" class="btn btn-success btn-block font-weight-bold">
+                <i class="fas fa-user-plus mr-1"></i> Register for Event
+              </a>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="col-12 text-center py-5">
+          <i class="fas fa-calendar-times text-muted fa-3x mb-3"></i>
+          <h5 class="text-muted">No upcoming events found.</h5>
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
