@@ -68,4 +68,6 @@ urlpatterns = [
    path('verify-otp/', views.verify_otp, name='verify_otp'),
    path('reset-password/', views.reset_password, name='reset_password'),
    path('user/registered-events/', views.my_registered_events, name='my_registered_events'),
+   path('user/dashboard/', views.user_dashboard, name='user_dashboard'),
+   path('user/event/<int:event_id>/', views.user_event_detail, name='user_event_detail'),
 ]

@@ -1,0 +1,63 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark font-weight-bold">
+          <i class="fas fa-info-circle text-primary mr-2"></i>Event Details
+        </h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'my_registered_events' %}">My Registrations</a></li>
+          <li class="breadcrumb-item active">{{ event.name }}</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-primary text-white">
+        <h4 class="card-title font-weight-bold mb-0">{{ event.name }}</h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <strong><i class="fas fa-tags mr-2 text-primary"></i>Category:</strong>
+            <p class="text-muted ml-4">{{ event.category.name|default:"General" }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong><i class="fas fa-map-marker-alt mr-2 text-danger"></i>Venue:</strong>
+            <p class="text-muted ml-4">{{ event.venue }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong><i class="far fa-calendar-alt mr-2 text-success"></i>Date:</strong>
+            <p class="text-muted ml-4">{{ event.event_date|date:"M d, Y" }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong><i class="far fa-clock mr-2 text-warning"></i>Time:</strong>
+            <p class="text-muted ml-4">{{ event.start_time|default:"Not specified" }}</p>
+          </div>
+          <div class="col-12 mb-3">
+            <strong><i class="fas fa-align-left mr-2 text-info"></i>Description:</strong>
+            <p class="text-muted ml-4 mt-1">{{ event.description|default:"No description provided." }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer bg-light d-flex justify-content-between">
+        <a href="{% url 'my_registered_events' %}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left mr-1"></i> Back to Registrations
+        </a>
+        {% if is_ended %}
+          <span class="badge badge-danger p-2 align-self-center">Event Ended - Registrations Closed</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

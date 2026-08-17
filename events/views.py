@@ -8,6 +8,8 @@ from django.contrib import messages
 import random
 from django.core.mail import send_mail
 from django.conf import settings
+from datetime import date
+
 
 
 from .models import (
@@ -79,7 +81,7 @@ def user_login(request):
                 if is_admin:
                     return redirect("dashboard")
                 else:
-                    return redirect("user_event_list")
+                    return redirect("user_dashboard")
         else:
             messages.error(request, "Invalid username or password.")
     else:
@@ -115,88 +117,105 @@ def user_event_list(request):
 @login_required
 def my_registered_events(request):
     user = request.user
-    
-    # Match by Email OR Username OR Full Name
     conditions = Q()
-    
     if user.email:
         conditions |= Q(email__iexact=user.email)
-        
     if user.username:
         conditions |= Q(full_name__iexact=user.username)
-        
     user_full_name = user.get_full_name().strip()
     if user_full_name:
         conditions |= Q(full_name__iexact=user_full_name)
 
     registrations = Registration.objects.filter(conditions).distinct().select_related('event').order_by('-registered_at')
 
-    return render(request, 'user/my_registered_events.html', {'registrations': registrations})
+    return render(request, 'user/my_registered_events.html', {
+        'registrations': registrations,
+        'today': date.today()
+    })
 
 @login_required
 def dashboard(request):
-    if not (request.user.is_staff or request.user.is_superuser):
-        return redirect("user_event_list")
-    
-    search = request.GET.get("search", "").strip()
+  if not (request.user.is_staff or request.user.is_superuser):
+    return redirect("user_dashboard")
 
-    total_categories = Category.objects.count()
-    total_events = Event.objects.count()
-    total_members = Registration.objects.count()
-    total_attendance = Attendance.objects.count()
+  search = request.GET.get("search", "").strip()
+  today = date.today()
 
-    upcoming_events = Event.objects.filter(status="Upcoming").count()
-    completed_events = Event.objects.filter(status="Completed").count()
+  total_categories = Category.objects.count()
+  total_events = Event.objects.count()
+  total_members = Registration.objects.count()
+  total_attendance = Attendance.objects.count()
 
-    events = Event.objects.select_related("category").all().order_by("-created_at", "-id")
-    categories = Category.objects.all().order_by("-created_at", "-id")
-    members = Registration.objects.select_related("event").all().order_by("-registered_at", "-id")
-    attendance = Attendance.objects.select_related(
-        "registration", "registration__event"
-    ).all().order_by("-attendance_date", "-id")
+  # Dynamic count based on date and status
+  upcoming_events = Event.objects.filter(
+      event_date__gte=today, status="Upcoming"
+  ).count()
+  completed_events = Event.objects.filter(
+      Q(event_date__lt=today) | Q(status="Completed")
+  ).count()
 
-    if search:
-        events = events.filter(
-            Q(name__icontains=search) |
-            Q(category__name__icontains=search) |
-            Q(venue__icontains=search) |
-            Q(description__icontains=search)
-        )
+  events = (
+      Event.objects.select_related("category")
+      .all()
+      .order_by("-created_at", "-id")
+  )
+  categories = Category.objects.all().order_by("-created_at", "-id")
+  members = (
+      Registration.objects.select_related("event")
+      .all()
+      .order_by("-registered_at", "-id")
+  )
+  attendance = (
+      Attendance.objects.select_related(
+          "registration", "registration__event"
+      )
+      .all()
+      .order_by("-attendance_date", "-id")
+  )
 
-        categories = categories.filter(
-            Q(name__icontains=search) |
-            Q(description__icontains=search)
-        )
+  if search:
+    events = events.filter(
+        Q(name__icontains=search)
+        | Q(category__name__icontains=search)
+        | Q(venue__icontains=search)
+        | Q(description__icontains=search)
+    )
 
-        members = members.filter(
-            Q(full_name__icontains=search) |
-            Q(email__icontains=search) |
-            Q(phone__icontains=search) |
-            Q(college__icontains=search) |
-            Q(event__name__icontains=search)
-        )
+    # Replaced description with category_code
+    categories = categories.filter(
+        Q(name__icontains=search) | Q(category_code__icontains=search)
+    )
 
-        attendance = attendance.filter(
-            Q(registration__full_name__icontains=search) |
-            Q(registration__event__name__icontains=search) |
-            Q(status__icontains=search)
-        )
+    members = members.filter(
+        Q(full_name__icontains=search)
+        | Q(email__icontains=search)
+        | Q(phone__icontains=search)
+        | Q(college__icontains=search)
+        | Q(event__name__icontains=search)
+    )
 
-    context = {
-        "total_categories": total_categories,
-        "total_events": total_events,
-        "total_members": total_members,
-        "total_attendance": total_attendance,
-        "upcoming_events": upcoming_events,
-        "completed_events": completed_events,
-        "events": events,
-        "categories": categories,
-        "members": members,
-        "attendance": attendance,
-        "search": search,
-    }
+    attendance = attendance.filter(
+        Q(registration__full_name__icontains=search)
+        | Q(registration__event__name__icontains=search)
+        | Q(status__icontains=search)
+    )
 
-    return render(request, "dashboard/dashboard.html", context)
+  context = {
+      "total_categories": total_categories,
+      "total_events": total_events,
+      "total_members": total_members,
+      "total_attendance": total_attendance,
+      "upcoming_events": upcoming_events,
+      "completed_events": completed_events,
+      "events": events,
+      "categories": categories,
+      "members": members,
+      "attendance": attendance,
+      "today": today,
+      "search": search,
+  }
+
+  return render(request, "dashboard/dashboard.html", context)
 
 
 @login_required
@@ -255,28 +274,18 @@ def create_event(request):
 
 @login_required
 def event_list(request):
-    search = request.GET.get("search", "")
+    search_query = request.GET.get('search', '')
+    events = Event.objects.all().select_related('category').order_by('-event_date')
 
-    events = Event.objects.select_related("category").all()
+    if search_query:
+        events = events.filter(name__icontains=search_query)
 
-    if search:
-        events = events.filter(
-            Q(name__icontains=search) |
-            Q(category__name__icontains=search) |
-            Q(venue__icontains=search)
-        )
-
-    events = events.order_by("-created_at", "-id")
-
-    return render(
-        request,
-        "events/event_list.html",
-        {
-            "events": events,
-            "search": search,
-        },
-    )
-
+    context = {
+        'events': events,
+        'today': date.today(),
+        'search_query': search_query,
+    }
+    return render(request, 'events/event_list.html', context)
 
 @login_required
 def event_detail(request, pk):
@@ -311,6 +320,10 @@ def register_member(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             registration = form.save(commit=False)
+
+            if registration.event.event_date and registration.event.event_date < date.today():
+                messages.error(request, "Registration closed: This event has already ended.")
+                return render(request, "members/register_member.html", {"form": form})
             
             if not registration.email and request.user.email:
                 registration.email = request.user.email
@@ -341,6 +354,8 @@ def register_member(request):
             initial_data['full_name'] = request.user.get_full_name() or request.user.username
             
         form = RegistrationForm(initial=initial_data)
+        if 'event' in form.fields and not (request.user.is_staff or request.user.is_superuser):
+            form.fields['event'].queryset = Event.objects.filter(event_date__gte=date.today()).order_by('event_date')
 
     return render(request, "members/register_member.html", {"form": form})
 
@@ -592,3 +607,54 @@ def reset_password(request):
             return redirect('login')
 
     return render(request, "registration/reset_password.html")
+
+@login_required
+def user_dashboard(request):
+  user = request.user
+  today = date.today()
+
+  # 1. Total events created in the system
+  total_events_count = Event.objects.count()
+
+  # 2. Registrations for the logged-in user
+  conditions = Q()
+  if user.email:
+    conditions |= Q(email__iexact=user.email)
+  if user.username:
+    conditions |= Q(full_name__iexact=user.username)
+  user_full_name = user.get_full_name().strip()
+  if user_full_name:
+    conditions |= Q(full_name__iexact=user_full_name)
+
+  user_registrations = (
+      Registration.objects.filter(conditions)
+      .distinct()
+      .select_related('event')
+  )
+  registrations_count = user_registrations.count()
+
+  # 3. Upcoming events
+  upcoming_count = Event.objects.filter(
+      event_date__gte=today, status='Upcoming'
+  ).count()
+
+  # 4. Completed events
+  completed_count = Event.objects.filter(
+      Q(event_date__lt=today) | Q(status='Completed')
+  ).count()
+
+  context = {
+      'total_events_count': total_events_count,
+      'registrations_count': registrations_count,
+      'upcoming_count': upcoming_count,
+      'completed_count': completed_count,
+      'recent_registrations': user_registrations.order_by('-registered_at')[:5],
+  }
+  return render(request, 'user/user_dashboard.html', context)
+
+
+@login_required
+def user_event_detail(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    is_ended = event.event_date < date.today() if event.event_date else False
+    return render(request, "user/user_event_detail.html", {"event": event, "is_ended": is_ended})

@@ -1,0 +1,121 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<style>
+  .user-welcome-banner {
+    background: #fdfbf7;
+    border-radius: 16px;
+    padding: 35px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    margin-bottom: 25px;
+  }
+  .stat-card-custom {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 25px 20px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #f0f0f0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .stat-card-custom:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  }
+  .stat-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 12px;
+  }
+  .stat-card-number {
+    font-size: 2.3rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0;
+  }
+</style>
+
+<div class="container-fluid pt-3">
+  <!-- Welcome Banner -->
+  <div class="user-welcome-banner">
+    <h2 class="font-weight-bold text-dark mb-4">
+      👋 Welcome {{ user.first_name|default:user.username }}
+    </h2>
+
+    <!-- 4 Stats Cards: Total Events, Registrations, Upcoming, Completed -->
+    <div class="row">
+      <!-- 1. Total Events -->
+      <div class="col-lg-3 col-6 mb-3">
+        <div class="stat-card-custom">
+          <div class="stat-card-title">Total Events</div>
+          <div class="stat-card-number">{{ total_events_count }}</div>
+        </div>
+      </div>
+
+      <!-- 2. Registrations -->
+      <div class="col-lg-3 col-6 mb-3">
+        <div class="stat-card-custom">
+          <div class="stat-card-title">Registrations</div>
+          <div class="stat-card-number">{{ registrations_count }}</div>
+        </div>
+      </div>
+
+      <!-- 3. Upcoming Events -->
+      <div class="col-lg-3 col-6 mb-3">
+        <div class="stat-card-custom">
+          <div class="stat-card-title">Upcoming</div>
+          <div class="stat-card-number">{{ upcoming_count }}</div>
+        </div>
+      </div>
+
+      <!-- 4. Completed Events -->
+      <div class="col-lg-3 col-6 mb-3">
+        <div class="stat-card-custom">
+          <div class="stat-card-title">Completed</div>
+          <div class="stat-card-number">{{ completed_count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Event Activity -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+      <h5 class="m-0 font-weight-bold text-dark">
+        <i class="fas fa-history mr-2 text-primary"></i>Recent Registrations
+      </h5>
+    </div>
+    <div class="card-body p-0 table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="thead-light">
+          <tr>
+            <th>Event Name</th>
+            <th>Category</th>
+            <th>Venue</th>
+            <th>Event Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for reg in recent_registrations %}
+            <tr>
+              <td class="font-weight-bold text-primary">{{ reg.event.name }}</td>
+              <td><span class="badge badge-info">{{ reg.event.category.name|default:"General" }}</span></td>
+              <td>{{ reg.event.venue }}</td>
+              <td>{{ reg.event.event_date|date:"M d, Y" }}</td>
+              <td><span class="badge badge-success">Registered</span></td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-4 text-muted">
+                No registrations yet. <a href="{% url 'user_event_list' %}" class="font-weight-bold">Browse Events</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
