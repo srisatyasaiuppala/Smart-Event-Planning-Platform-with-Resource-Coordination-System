@@ -122,7 +122,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static", ]
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "user_event_list"
+LOGIN_REDIRECT_URL = "user_dashboard"
 LOGOUT_REDIRECT_URL = "login"
 
 import os

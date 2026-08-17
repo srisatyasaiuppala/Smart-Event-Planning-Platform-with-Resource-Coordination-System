@@ -6,12 +6,12 @@
     <div class="row mb-2">
       <div class="col-sm-6">
         <h1 class="m-0 text-dark font-weight-bold">
-          <i class="fas fa-calendar-check text-info mr-2"></i>Registered Events
+          <i class="fas fa-calendar-check text-info mr-2"></i>My Registered Events
         </h1>
       </div>
       <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="{% url 'user_event_list' %}">Events</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'user_dashboard' %}">Dashboard</a></li>
           <li class="breadcrumb-item active">Registered Events</li>
         </ol>
       </div>
@@ -23,7 +23,7 @@
   <div class="container-fluid">
     <div class="card card-outline card-info shadow-sm">
       <div class="card-header">
-        <h3 class="card-title font-weight-bold">My Event Registrations</h3>
+        <h3 class="card-title font-weight-bold">Events You Registered For</h3>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -35,7 +35,8 @@
                 <th>Category</th>
                 <th>Venue</th>
                 <th>Event Date</th>
-                <th>Registered On</th>
+                <th>Status</th>
+                <th class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -48,11 +49,22 @@
                   </td>
                   <td><i class="fas fa-map-marker-alt text-danger mr-1"></i>{{ reg.event.venue }}</td>
                   <td><i class="far fa-calendar-alt text-secondary mr-1"></i>{{ reg.event.event_date|date:"M d, Y" }}</td>
-                  <td>{{ reg.registered_at|date:"M d, Y, h:i A" }}</td>
+                  <td>
+                    {% if reg.event.event_date < today %}
+                      <span class="badge badge-secondary">Ended</span>
+                    {% else %}
+                      <span class="badge badge-success">Upcoming</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    <a href="{% url 'user_event_detail' reg.event.id %}" class="btn btn-sm btn-outline-info font-weight-bold">
+                      <i class="fas fa-eye mr-1"></i> View
+                    </a>
+                  </td>
                 </tr>
               {% empty %}
                 <tr>
-                  <td colspan="6" class="text-center py-4 text-muted">
+                  <td colspan="7" class="text-center py-4 text-muted">
                     <i class="fas fa-calendar-times fa-2x mb-2 d-block"></i>
                     You haven't registered for any events yet.
                     <a href="{% url 'user_event_list' %}" class="ml-1 font-weight-bold">Browse Events</a>

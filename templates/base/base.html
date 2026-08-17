@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if user.is_staff or user.is_superuser %}Admin Panel{% else %}User Portal{% endif %} | Event Management</title>
+  <title id="pageHeaderTitle">{% if user.is_staff or user.is_superuser %}Admin Panel{% else %}User Portal{% endif %} | Event Management</title>
 
   <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -14,6 +14,30 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
 
   <style>
+    /* CSS Root Variables for Live Custom Colors */
+    :root {
+      --custom-navbar-bg: #007bff;
+      --custom-sidebar-bg: #1e293b;
+      --custom-footer-bg: #0d1117;
+    }
+
+    /* Live Dynamic Themes */
+    .custom-dynamic-navbar {
+      background-color: var(--custom-navbar-bg) !important;
+    }
+    .custom-dynamic-sidebar {
+      background-color: var(--custom-sidebar-bg) !important;
+    }
+    .custom-dynamic-sidebar .nav-link,
+    .custom-dynamic-sidebar .brand-link,
+    .custom-dynamic-sidebar .user-panel .info a {
+      color: #f8fafc !important;
+    }
+    .custom-dynamic-sidebar .nav-link.active {
+      background-color: rgba(255, 255, 255, 0.2) !important;
+      color: #ffffff !important;
+    }
+
     /* Swatch Grid Layout */
     .color-swatch-grid {
       display: flex;
@@ -40,11 +64,7 @@
     /* PREVENT ACCENT COLOR FROM CHANGING USERNAME COLOR */
     .user-panel .info a,
     .user-panel .info a:hover {
-      color: #343a40 !important; /* Standard dark font color */
-    }
-    body.dark-mode .user-panel .info a,
-    body.dark-mode .user-panel .info a:hover {
-      color: #c2c7d0 !important; /* Standard light color in dark mode */
+      color: #ffffff !important;
     }
 
     /* Dynamic Accent Color Themes for Cards and Primary Action Buttons across all pages */
@@ -74,7 +94,7 @@
 
     /* Dark Footer Custom Styling */
     .custom-dark-footer {
-      background-color: #0d1117 !important;
+      background-color: var(--custom-footer-bg) !important;
       color: #ffffff !important;
       padding: 30px 15px !important;
       text-align: center !important;
@@ -110,14 +130,14 @@
 <div class="wrapper">
 
   <!-- Top Navbar -->
-  <nav class="main-header navbar navbar-expand navbar-primary navbar-dark" id="mainNavbar">
+  <nav class="main-header navbar navbar-expand navbar-dark custom-dynamic-navbar" id="mainNavbar">
     <!-- Left navbar links -->
     <ul class="navbar-nav">
       <li class="nav-item">
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_event_list' %}{% endif %}" class="nav-link">Accueil</a>
+        <a href="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_dashboard' %}{% endif %}" class="nav-link">Accueil</a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
         <a href="#" class="nav-link">Contact</a>
@@ -213,7 +233,7 @@
       {% if user.is_staff or user.is_superuser %}
         <li class="nav-item">
           <a class="nav-link" data-widget="control-sidebar" href="#" role="button">
-            <i class="fas fa-th-large"></i>
+            <i class="fas fa-sliders-h"></i>
           </a>
         </li>
       {% endif %}
@@ -246,10 +266,10 @@
   </nav>
 
   <!-- Main Left Sidebar -->
-  <aside class="main-sidebar sidebar-light-primary elevation-4" id="mainSidebar">
-    <a href="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_event_list' %}{% endif %}" class="brand-link">
-      <span class="brand-text font-weight-light pl-3">
-        <strong>{% if user.is_staff or user.is_superuser %}Admin Panel{% else %}User Portal{% endif %}</strong>
+  <aside class="main-sidebar custom-dynamic-sidebar elevation-4" id="mainSidebar">
+    <a href="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_dashboard' %}{% endif %}" class="brand-link">
+      <span class="brand-text font-weight-bold pl-3" id="brandTitleText">
+        {% if user.is_staff or user.is_superuser %}Admin Panel{% else %}User Portal{% endif %}
       </span>
     </a>
 
@@ -260,12 +280,12 @@
             {% if request.user.profile.image %}
               <img src="{{ request.user.profile.image.url }}" class="img-circle elevation-2" alt="User Image" style="width: 35px; height: 35px; object-fit: cover;">
             {% else %}
-              <i class="fas fa-user-circle fa-2x text-secondary"></i>
+              <i class="fas fa-user-circle fa-2x text-light"></i>
             {% endif %}
           </a>
         </div>
         <div class="info">
-          <a href="{% url 'profile' %}" class="d-block font-weight-bold">
+          <a href="{% url 'profile' %}" class="d-block font-weight-bold text-white">
             {{ user.get_full_name|default:user.username }}
           </a>
         </div>
@@ -372,22 +392,29 @@
             <!-- ================= REGULAR USER SIDEBAR MENU ================= -->
 
             <li class="nav-item">
-              <a href="{% url 'user_event_list' %}" class="nav-link">
-                <i class="nav-icon fas fa-calendar-alt text-primary"></i>
-                <p>Upcoming Events</p>
+              <a href="{% url 'user_dashboard' %}" class="nav-link">
+                <i class="nav-icon fas fa-tachometer-alt text-primary"></i>
+                <p>Dashboard</p>
               </a>
             </li>
-            
+
+            <li class="nav-item">
+              <a href="{% url 'user_event_list' %}" class="nav-link">
+                <i class="nav-icon fas fa-calendar-alt text-info"></i>
+                <p>Event List</p>
+              </a>
+            </li>
+
             <li class="nav-item">
               <a href="{% url 'my_registered_events' %}" class="nav-link">
-                <i class="nav-icon fas fa-calendar-check text-info"></i>
-                <p>Registered Events</p>
+                <i class="nav-icon fas fa-calendar-check text-success"></i>
+                <p>My Registrations</p>
               </a>
             </li>
 
             <li class="nav-item">
               <a href="{% url 'register_member' %}" class="nav-link">
-                <i class="nav-icon fas fa-user-plus text-success"></i>
+                <i class="nav-icon fas fa-user-plus text-warning"></i>
                 <p>Register for Event</p>
               </a>
             </li>
@@ -395,7 +422,7 @@
           {% endif %}
 
           <!-- LOGOUT -->
-          <li class="nav-item mt-3 border-top pt-2">
+          <li class="nav-item mt-3 border-top border-secondary pt-2">
             <a href="{% url 'logout' %}" class="nav-link text-danger">
               <i class="nav-icon fas fa-sign-out-alt"></i>
               <p>Logout</p>
@@ -407,13 +434,20 @@
     </div>
   </aside>
 
-  <!-- Control Sidebar (Customize Drawer) -->
+  <!-- Control Sidebar (Customize Drawer for Admins) -->
+  {% if user.is_staff or user.is_superuser %}
   <aside class="control-sidebar control-sidebar-dark p-3" style="background-color: #1a2332; color: #b0bec5; overflow-y: auto; max-height: 100vh;">
     <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
       <h5 class="m-0 text-white font-weight-bold" style="font-size: 1.1rem;">
         <i class="fas fa-sliders-h mr-2"></i>Customize
       </h5>
       <button type="button" class="close text-white" data-widget="control-sidebar">&times;</button>
+    </div>
+
+    <!-- Dashboard Title -->
+    <div class="mb-3">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-1">DASHBOARD TITLE</label>
+      <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary" id="inputDashTitle" value="Admin Panel">
     </div>
 
     <!-- Appearance Mode -->
@@ -423,6 +457,29 @@
         <button type="button" class="btn btn-sm btn-outline-secondary text-white active" id="btn-mode-light"><i class="fas fa-sun mr-1"></i> Light</button>
         <button type="button" class="btn btn-sm btn-outline-secondary text-white" id="btn-mode-dark"><i class="fas fa-moon mr-1"></i> Dark</button>
       </div>
+    </div>
+
+    <!-- Live Color Pickers -->
+    <div class="mb-3">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-1">NAVBAR / HEADER COLOR</label>
+      <input type="color" class="form-control form-control-color w-100 border-0" id="colorPickerPrimary" value="#007bff" style="height: 38px;">
+    </div>
+
+    <div class="mb-3">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-1">SIDEBAR COLOR</label>
+      <input type="color" class="form-control form-control-color w-100 border-0" id="colorPickerSidebar" value="#1e293b" style="height: 38px;">
+    </div>
+
+    <div class="mb-3">
+      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-1">FOOTER COLOR</label>
+      <input type="color" class="form-control form-control-color w-100 border-0" id="colorPickerFooter" value="#0d1117" style="height: 38px;">
+    </div>
+
+    <!-- Save / Apply Live Colors -->
+    <div class="d-flex gap-2 mb-4">
+      <button type="button" class="btn btn-sm btn-info flex-fill font-weight-bold text-white" id="btnSaveColors">
+        <i class="fas fa-save mr-1"></i> Save Customization
+      </button>
     </div>
 
     <!-- Font Size Controls -->
@@ -445,46 +502,6 @@
         <span class="accent-swatch bg-success rounded-circle d-flex align-items-center justify-content-center active-swatch" data-accent="accent-success" style="width: 22px; height: 22px; cursor: pointer;"><i class="fas fa-check text-white" style="font-size: 10px;"></i></span>
         <span class="accent-swatch bg-danger rounded-circle" data-accent="accent-danger" style="width: 22px; height: 22px; cursor: pointer;"></span>
         <span class="accent-swatch bg-teal rounded-circle" data-accent="accent-teal" style="width: 22px; height: 22px; cursor: pointer;"></span>
-      </div>
-    </div>
-
-    <!-- Navbar Variants -->
-    <div class="mb-4">
-      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">NAVBAR VARIANTS</label>
-      <div class="color-swatch-grid">
-        <span class="color-swatch bg-primary navbar-swatch" data-navbar="navbar-primary navbar-dark"></span>
-        <span class="color-swatch bg-success navbar-swatch" data-navbar="navbar-success navbar-dark"></span>
-        <span class="color-swatch bg-danger navbar-swatch" data-navbar="navbar-danger navbar-dark"></span>
-        <span class="color-swatch bg-warning navbar-swatch" data-navbar="navbar-warning navbar-light"></span>
-        <span class="color-swatch bg-info navbar-swatch" data-navbar="navbar-info navbar-dark"></span>
-        <span class="color-swatch bg-dark navbar-swatch" data-navbar="navbar-dark navbar-dark"></span>
-        <span class="color-swatch bg-white border navbar-swatch" data-navbar="navbar-white navbar-light"></span>
-      </div>
-    </div>
-
-    <!-- Sidebar Variants -->
-    <div class="mb-4">
-      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">SIDEBAR VARIANTS</label>
-      <div class="color-swatch-grid">
-        <span class="color-swatch bg-dark sidebar-swatch" data-sidebar="sidebar-dark-primary"></span>
-        <span class="color-swatch bg-info sidebar-swatch" data-sidebar="sidebar-dark-info"></span>
-        <span class="color-swatch bg-success sidebar-swatch" data-sidebar="sidebar-dark-success"></span>
-        <span class="color-swatch bg-danger sidebar-swatch" data-sidebar="sidebar-dark-danger"></span>
-        <span class="color-swatch bg-warning sidebar-swatch" data-sidebar="sidebar-dark-warning"></span>
-        <span class="color-swatch bg-light border sidebar-swatch" data-sidebar="sidebar-light-primary"></span>
-      </div>
-    </div>
-
-    <!-- Footer Variants -->
-    <div class="mb-4">
-      <label class="text-uppercase text-xs text-muted font-weight-bold d-block mb-2">FOOTER VARIANTS</label>
-      <div class="color-swatch-grid">
-        <span class="color-swatch bg-dark footer-swatch" data-footer="bg-dark text-white"></span>
-        <span class="color-swatch bg-info footer-swatch" data-footer="bg-info text-white"></span>
-        <span class="color-swatch bg-success footer-swatch" data-footer="bg-success text-white"></span>
-        <span class="color-swatch bg-danger footer-swatch" data-footer="bg-danger text-white"></span>
-        <span class="color-swatch bg-warning footer-swatch" data-footer="bg-warning text-dark"></span>
-        <span class="color-swatch bg-white border footer-swatch" data-footer="bg-white text-dark"></span>
       </div>
     </div>
 
@@ -544,6 +561,7 @@
       </button>
     </div>
   </aside>
+  {% endif %}
 
   <!-- Content Wrapper -->
   <div class="content-wrapper p-3">
@@ -563,7 +581,7 @@
   </div>
 
   <!-- Footer Matching 4th Pic Style -->
-  <footer class="main-footer custom-dark-footer">
+  <footer class="main-footer custom-dark-footer" id="mainFooter">
     <p class="mb-2 font-weight-normal">&copy; 2026 Event Registration Platform. All Rights Reserved.</p>
     
     <div class="social-icons">
@@ -592,18 +610,69 @@ $(document).ready(function() {
 
   $('.dropdown-toggle, [data-toggle="dropdown"]').dropdown();
 
-  let currentFontSize = parseInt(localStorage.getItem('app-font-size')) || 16;
+  // Load Custom Dynamic Colors
+  const savedNavbarColor  = localStorage.getItem('app-navbar-color')  || '#007bff';
+  const savedSidebarColor = localStorage.getItem('app-sidebar-color') || '#1e293b';
+  const savedFooterColor  = localStorage.getItem('app-footer-color')  || '#0d1117';
+  const savedDashTitle    = localStorage.getItem('app-dash-title')    || 'Admin Panel';
 
+  function applyCustomColors(nav, side, foot, title) {
+    document.documentElement.style.setProperty('--custom-navbar-bg', nav);
+    document.documentElement.style.setProperty('--custom-sidebar-bg', side);
+    document.documentElement.style.setProperty('--custom-footer-bg', foot);
+
+    $('#colorPickerPrimary').val(nav);
+    $('#colorPickerSidebar').val(side);
+    $('#colorPickerFooter').val(foot);
+    $('#inputDashTitle').val(title);
+
+    {% if user.is_staff or user.is_superuser %}
+      $('#brandTitleText').text(title);
+      document.title = title + " | Event Management";
+    {% endif %}
+  }
+
+  // Apply colors on initial load
+  applyCustomColors(savedNavbarColor, savedSidebarColor, savedFooterColor, savedDashTitle);
+
+  // Live Pickers Real-Time Preview
+  $('#colorPickerPrimary').on('input', function() {
+    document.documentElement.style.setProperty('--custom-navbar-bg', $(this).val());
+  });
+  $('#colorPickerSidebar').on('input', function() {
+    document.documentElement.style.setProperty('--custom-sidebar-bg', $(this).val());
+  });
+  $('#colorPickerFooter').on('input', function() {
+    document.documentElement.style.setProperty('--custom-footer-bg', $(this).val());
+  });
+
+  // Save Customization
+  $('#btnSaveColors').click(function() {
+    const nav = $('#colorPickerPrimary').val();
+    const side = $('#colorPickerSidebar').val();
+    const foot = $('#colorPickerFooter').val();
+    const title = $('#inputDashTitle').val();
+
+    localStorage.setItem('app-navbar-color', nav);
+    localStorage.setItem('app-sidebar-color', side);
+    localStorage.setItem('app-footer-color', foot);
+    localStorage.setItem('app-dash-title', title);
+
+    applyCustomColors(nav, side, foot, title);
+    alert('Customization Saved Successfully!');
+  });
+
+  // Font Size
+  let currentFontSize = parseInt(localStorage.getItem('app-font-size')) || 16;
   function updateFontSize(size) {
     currentFontSize = size;
     $('html').css('font-size', currentFontSize + 'px');
     $('#font-size-val').text(currentFontSize + 'px');
     localStorage.setItem('app-font-size', currentFontSize);
   }
-
-  // Load stored preferences
   updateFontSize(currentFontSize);
 
+  // Stored UI Preferences
   if (localStorage.getItem('theme-mode') === 'dark') {
     $('body').addClass('dark-mode');
     $('#btn-mode-dark').addClass('active').siblings().removeClass('active');
@@ -650,21 +719,6 @@ $(document).ready(function() {
     $('#sw-side-legacy').prop('checked', true);
   }
 
-  const savedNavbar = localStorage.getItem('navbar-variant');
-  if (savedNavbar) {
-    $('#mainNavbar').attr('class', 'main-header navbar navbar-expand ' + savedNavbar);
-  }
-
-  const savedSidebar = localStorage.getItem('sidebar-variant');
-  if (savedSidebar) {
-    $('#mainSidebar').attr('class', 'main-sidebar elevation-4 ' + savedSidebar);
-  }
-
-  const savedFooter = localStorage.getItem('footer-variant');
-  if (savedFooter) {
-    $('#mainFooter').attr('class', 'main-footer ' + savedFooter);
-  }
-
   const savedAccent = localStorage.getItem('accent-color') || 'accent-primary';
   $('body').removeClass(function(i, c) { return (c.match(/(^|\s)accent-\S+/g) || []).join(' '); }).addClass(savedAccent);
 
@@ -683,24 +737,6 @@ $(document).ready(function() {
 
   $('#btn-font-dec').click(function() {
     if (currentFontSize > 12) updateFontSize(currentFontSize - 1);
-  });
-
-  $('.navbar-swatch').click(function() {
-    const variant = $(this).data('navbar');
-    $('#mainNavbar').attr('class', 'main-header navbar navbar-expand ' + variant);
-    localStorage.setItem('navbar-variant', variant);
-  });
-
-  $('.sidebar-swatch').click(function() {
-    const variant = $(this).data('sidebar');
-    $('#mainSidebar').attr('class', 'main-sidebar elevation-4 ' + variant);
-    localStorage.setItem('sidebar-variant', variant);
-  });
-
-  $('.footer-swatch').click(function() {
-    const variant = $(this).data('footer');
-    $('#mainFooter').attr('class', 'main-footer ' + variant);
-    localStorage.setItem('footer-variant', variant);
   });
 
   $('#btn-mode-light').click(function() {

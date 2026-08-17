@@ -26,17 +26,10 @@ class SignUpForm(UserCreationForm):
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
-        fields = ["name", "description"]
+        fields = ['name', 'category_code']
         widgets = {
-            "name": forms.TextInput(attrs={
-                "class": "form-control w-100",
-                "placeholder": "Enter category name"
-            }),
-            "description": forms.Textarea(attrs={
-                "class": "form-control w-100",
-                "rows": 3,
-                "placeholder": "Enter description"
-            }),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter category name','required': 'required'}),
+            'category_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., CAT-01','required': 'required'}),
         }
 
     def clean_name(self):
