@@ -1,4 +1,4 @@
-# Event Registration Platform
+# Smart Event Planning Platform with Resource Coordination System
 
 A web-based Event Registration Platform developed using Django for managing college events, event categories, member registrations, attendance, notifications, user profiles, and completed events.
 
@@ -315,7 +315,7 @@ The database stores information related to:
 
 Django ORM is used to communicate with the database
 
-Installation and Setup
+# Installation and Setup
 
 Step 1: Clone the Repository
 git clone https://github.com/srisatyasaiuppala/event-registration-platform.git
