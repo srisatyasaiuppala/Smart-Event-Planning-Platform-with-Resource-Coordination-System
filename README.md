@@ -317,27 +317,27 @@ Django ORM is used to communicate with the database
 
 # Installation and Setup
 
-Step 1: Clone the Repository
+Step 1: Clone the Repository  
 git clone https://github.com/srisatyasaiuppala/event-registration-platform.git
 
-Step 2: Open the Project
+Step 2: Open the Project  
 cd event-registration-platform
 
-Step 3: Create a Virtual Environment
+Step 3: Create a Virtual Environment  
 python -m venv venv
 
-Step 4: Activate the Virtual Environment
-Windows
+Step 4: Activate the Virtual Environment  
+Windows  
 venv\Scripts\activate
 
-Step 5: Install Django
+Step 5: Install Django  
 pip install django
 
-Step 6: Apply Database Migrations
+Step 6: Apply Database Migrations  
 python manage.py migrate
 
-Step 7: Run the Development Server
+Step 7: Run the Development Server  
 python manage.py runserver
 
-Open the application in your browser:
+Open the application in your browser:  
 http://127.0.0.1:8000/
