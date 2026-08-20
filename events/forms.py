@@ -5,6 +5,7 @@ from .models import Category,Event,Registration
 from .models import Attendance
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ValidationError
+from datetime import date
 
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=100)
@@ -44,61 +45,77 @@ class CategoryForm(forms.ModelForm):
         return name
 
 class EventForm(forms.ModelForm):
-    class Meta:
-        model = Event
-        fields = [
-            "category",
-            "name",
-            "description",
-            "event_date",
-            "end_date",      
-            "event_time",
-            "venue",
-            "status",
-        ]
-    
-        widgets = {
-            "category": forms.Select(attrs={
-                "class": "form-control"
-            }),
-            "name": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "Enter event title"
-            }),
-            "description": forms.Textarea(attrs={
-                "class": "form-control",
-                "rows": 4,
-                "placeholder": "Enter event description..."
-            }),
-            "event_date": forms.DateInput(attrs={
-                "class": "form-control",
-                "type": "date"
-            }),
-            "end_date": forms.DateInput(attrs={       # <-- Widget for end_date picker
-                "class": "form-control",
-                "type": "date"
-            }),
-            "event_time": forms.TimeInput(attrs={
-                "class": "form-control",
-                "type": "time"
-            }),
-            "venue": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "Enter venue or location"
-            }),
-            "status": forms.Select(attrs={
-                "class": "form-control"
-            }),
-        }
-    def clean_name(self):
-            name = self.cleaned_data.get('name')
-            if name:
-                query=Event.objects.filter(name__iexact=name)
-                if self.instance and self.instance.pk:
-                    query=query.exclude(pk=self.instance.pk)
-                if query.exists():
-                    raise forms.ValidationError("An event with this name already exists!")
-            return name
+
+  class Meta:
+    model = Event
+    fields = [
+        'category',
+        'name',
+        'description',
+        'event_date',
+        'end_date',
+        'event_time',
+        'venue',
+        'status',
+    ]
+
+    widgets = {
+        'category': forms.Select(attrs={'class': 'form-control'}),
+        'name': forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': 'Enter event title'}
+        ),
+        'description': forms.Textarea(
+            attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Enter event description...',
+            }
+        ),
+        'event_date': forms.DateInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'date',
+                'min': date.today().isoformat(),
+            }
+        ),
+        'end_date': forms.DateInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'date',
+                'min': date.today().isoformat(),
+            }
+        ),
+        'event_time': forms.TimeInput(
+            attrs={'class': 'form-control', 'type': 'time'}
+        ),
+        'venue': forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter venue or location',
+            }
+        ),
+        'status': forms.Select(attrs={'class': 'form-control'}),
+    }
+
+  def clean_event_date(self):
+    event_date = self.cleaned_data.get('event_date')
+    if not self.instance.pk and event_date and event_date < date.today():
+      raise forms.ValidationError('Date must be today or a future date.')
+    return event_date
+
+  def clean(self):
+    cleaned_data = super().clean()
+    event_date = cleaned_data.get('event_date')
+    end_date = cleaned_data.get('end_date')
+
+    if event_date and end_date:
+      if end_date < event_date:
+        self.add_error(
+            'end_date', 'End date must be the same as or after start date.'
+        )
+
+    return cleaned_data
+
 class RegistrationForm(forms.ModelForm):
 
     class Meta:

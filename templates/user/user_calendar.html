@@ -1,0 +1,130 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<!-- FullCalendar CSS & JS CDN -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark font-weight-bold">
+          <i class="fas fa-calendar-alt text-danger mr-2"></i>Event Calendar
+        </h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'user_dashboard' %}">User Portal</a></li>
+          <li class="breadcrumb-item active">Calendar</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+    
+    <!-- Legend Guide -->
+    <div class="card shadow-sm mb-3">
+      <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center">
+        <strong class="mr-3 text-secondary"><i class="fas fa-info-circle mr-1"></i> Legend:</strong>
+        <span class="badge badge-success px-2 py-1 mr-3"><i class="fas fa-star mr-1"></i> My Registered Events</span>
+        <span class="badge badge-primary px-2 py-1 mr-3"><i class="fas fa-circle mr-1"></i> All Upcoming Events</span>
+        <span class="badge badge-secondary px-2 py-1"><i class="fas fa-check-circle mr-1"></i> Completed Events</span>
+      </div>
+    </div>
+
+    <!-- Calendar Container -->
+    <div class="card card-primary card-outline shadow-sm">
+      <div class="card-body p-3">
+        <div id="calendar"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventDetailModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title font-weight-bold" id="modalEventTitle">Event Details</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group list-group-unbordered">
+          <li class="list-group-item">
+            <b>Category:</b> <span class="float-right" id="modalCategory"></span>
+          </li>
+          <li class="list-group-item">
+            <b>Date & Time:</b> <span class="float-right" id="modalDateTime"></span>
+          </li>
+          <li class="list-group-item">
+            <b>Venue:</b> <span class="float-right" id="modalVenue"></span>
+          </li>
+          <li class="list-group-item">
+            <b>Status:</b> <span class="float-right" id="modalStatus"></span>
+          </li>
+          <li class="list-group-item">
+            <b>Registration:</b> <span class="float-right font-weight-bold" id="modalRegistrationStatus"></span>
+          </li>
+        </ul>
+        <div class="mt-3">
+          <b>Description:</b>
+          <p class="text-muted mt-1" id="modalDescription"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var rawEvents = {{ calendar_events_json|safe }};
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,listMonth'
+      },
+      events: rawEvents,
+      eventClick: function(info) {
+        var props = info.event.extendedProps;
+        document.getElementById('modalEventTitle').innerText = info.event.title;
+        document.getElementById('modalCategory').innerText = props.category;
+        document.getElementById('modalDateTime').innerText = info.event.startStr + ' (' + props.time + ')';
+        document.getElementById('modalVenue').innerText = props.venue;
+        
+        // Status Badge
+        var statusHtml = props.status === 'Upcoming' 
+          ? '<span class="badge badge-primary">Upcoming</span>'
+          : '<span class="badge badge-secondary">Completed</span>';
+        document.getElementById('modalStatus').innerHTML = statusHtml;
+
+        // Registration Badge
+        var regHtml = props.is_registered 
+          ? '<span class="text-success"><i class="fas fa-check-circle mr-1"></i>You are registered</span>'
+          : '<span class="text-muted">Not registered</span>';
+        document.getElementById('modalRegistrationStatus').innerHTML = regHtml;
+
+        document.getElementById('modalDescription').innerText = props.description;
+
+        $('#eventDetailModal').modal('show');
+      }
+    });
+
+    calendar.render();
+  });
+</script>
+{% endblock %}
