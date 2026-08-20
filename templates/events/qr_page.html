@@ -1,0 +1,85 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-wrapper" style="padding: 25px;">
+    <!-- Blue Header Card -->
+    <div style="background-color: #0284c7; color: white; padding: 18px 24px; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-qrcode" style="font-size: 1.5rem;"></i>
+            <h3 style="margin: 0; font-size: 1.3rem; font-weight: 600;">Registration QR Code</h3>
+        </div>
+    </div>
+
+    <!-- Main Content Box -->
+    <div style="background: white; padding: 40px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;">
+        <h4 style="color: #1e293b; font-weight: 700; margin-bottom: 8px;">Scan to Register for Events</h4>
+        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">
+            Scan this QR code with any mobile camera to open the registration form.
+        </p>
+
+        <!-- QR Code Container -->
+        <div style="display: inline-block; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.04);">
+            <img src="{% url 'admin_global_registration_qr' %}" alt="Registration QR Code" style="width: 260px; height: 260px; display: block;" />
+        </div>
+
+        <!-- "OR" Divider -->
+        <div style="display: flex; align-items: center; max-width: 460px; margin: 24px auto 16px;">
+            <div style="flex: 1; height: 1px; background-color: #e2e8f0;"></div>
+            <span style="padding: 0 14px; color: #94a3b8; font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">OR</span>
+            <div style="flex: 1; height: 1px; background-color: #e2e8f0;"></div>
+        </div>
+
+        <!-- Registration Link & Copy Box -->
+        <div style="max-width: 460px; margin: 0 auto; display: flex; align-items: center; border: 1.5px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #f8fafc;">
+            <input 
+                type="text" 
+                id="registrationUrlInput" 
+                value="http://127.0.0.1:8000/register/" 
+                readonly 
+                style="flex: 1; border: none; background: transparent; padding: 10px 14px; font-size: 0.9rem; color: #334155; outline: none;"
+            />
+            <button 
+                id="copyBtn"
+                onclick="copyRegistrationLink()" 
+                type="button" 
+                style="background: #0284c7; color: white; border: none; padding: 10px 18px; font-size: 0.88rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s;"
+            >
+                <i class="fa fa-copy"></i>
+                <span id="copyBtnText">Copy</span>
+            </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary" style="background-color: #64748b; color: white; padding: 10px 22px; border-radius: 6px; text-decoration: none; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+                &larr; Back to Dashboard
+            </a>
+
+            <a href="{% url 'admin_global_registration_qr' %}" download="Event_Registration_QR.png" class="btn btn-success" style="background-color: #10b981; color: white; padding: 10px 22px; border-radius: 6px; text-decoration: none; font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa fa-download"></i> Download QR
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyRegistrationLink() {
+    var copyInput = document.getElementById("registrationUrlInput");
+    copyInput.select();
+    copyInput.setSelectionRange(0, 99999);
+
+    navigator.clipboard.writeText(copyInput.value).then(function() {
+        var copyBtn = document.getElementById("copyBtn");
+        var copyText = document.getElementById("copyBtnText");
+
+        copyText.textContent = "Copied!";
+        copyBtn.style.backgroundColor = "#10b981";
+
+        setTimeout(function() {
+            copyText.textContent = "Copy";
+            copyBtn.style.backgroundColor = "#0284c7";
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}
