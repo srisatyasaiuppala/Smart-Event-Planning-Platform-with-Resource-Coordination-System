@@ -72,9 +72,10 @@ A web-based Event Registration Platform developed using Django for managing coll
 Django ORM is used to communicate with the database
 
 # Installation and Setup
-
+'''bash
 Step 1: Clone the Repository  
-git clone https://github.com/srisatyasaiuppala/event-registration-platform.git
+git clone
+https://github.com/srisatyasaiuppala/Smart-Event-Planning-Platform-with-Resource-Coordination-System.git
 
 Step 2: Open the Project  
 cd event-registration-platform
