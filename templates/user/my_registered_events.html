@@ -30,13 +30,13 @@
           <table class="table table-hover table-striped mb-0">
             <thead class="thead-dark">
               <tr>
-                <th>#</th>
+                <th style="width: 5%">#</th>
                 <th>Event Name</th>
                 <th>Category</th>
                 <th>Venue</th>
                 <th>Event Date</th>
                 <th>Status</th>
-                <th class="text-center">Actions</th>
+                <th class="text-center" style="width: 25%">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -57,11 +57,85 @@
                     {% endif %}
                   </td>
                   <td class="text-center">
-                    <a href="{% url 'user_event_detail' reg.event.id %}" class="btn btn-sm btn-outline-info font-weight-bold">
+                    <!-- View Event Detail Button -->
+                    <a href="{% url 'user_event_detail' reg.event.id %}" class="btn btn-sm btn-outline-info font-weight-bold mr-1">
                       <i class="fas fa-eye mr-1"></i> View
+                    </a>
+
+                    <!-- View Ticket Modal Trigger -->
+                    <button type="button" 
+                            class="btn btn-sm btn-primary font-weight-bold shadow-sm"
+                            data-toggle="modal" 
+                            data-target="#ticketModal{{ reg.id }}">
+                      <i class="fas fa-qrcode mr-1"></i> Ticket QR
+                    </button>
+
+                    <!-- Dedicated Full Ticket Page Link -->
+                    <a href="{% url 'my_ticket' reg.id %}" class="btn btn-sm btn-outline-secondary" title="Full Page Ticket" target="_blank">
+                      <i class="fas fa-external-link-alt"></i>
                     </a>
                   </td>
                 </tr>
+
+                <!-- INDIVIDUAL TICKET POPUP MODAL -->
+                <div class="modal fade" id="ticketModal{{ reg.id }}" tabindex="-1" role="dialog" aria-labelledby="ticketModalLabel{{ reg.id }}" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+                      <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title font-weight-bold" id="ticketModalLabel{{ reg.id }}">
+                          <i class="fas fa-ticket-alt mr-2"></i>{{ reg.event.name }} - Admission Ticket
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      
+                      <div class="modal-body text-center p-4">
+                        <p class="text-muted text-xs mb-3">Show this QR code at event reception to record your attendance</p>
+
+                        <div class="mb-3">
+                          {% if reg.ticket_qr %}
+                            <img src="{{ reg.ticket_qr.url }}" alt="Ticket QR Code" class="img-thumbnail p-2 shadow-sm" style="width: 190px; height: 190px;">
+                          {% else %}
+                            <div class="alert alert-warning py-2">QR Code not generated yet.</div>
+                          {% endif %}
+                        </div>
+
+                        <ul class="list-group list-group-unbordered text-left mb-3">
+                          <li class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Attendee:</span>
+                            <strong class="text-dark">{{ reg.full_name }}</strong>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">College:</span>
+                            <span>{{ reg.college }}</span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Event Date:</span>
+                            <span>{{ reg.event.event_date|date:"M d, Y" }}</span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Venue:</span>
+                            <span>{{ reg.event.venue }}</span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Ticket ID:</span>
+                            <code class="text-xs">{{ reg.ticket_id }}</code>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div class="modal-footer justify-content-between bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                        <a href="{% url 'my_ticket' reg.id %}" target="_blank" class="btn btn-primary btn-sm font-weight-bold">
+                          <i class="fas fa-print mr-1"></i> Print / Download Pass
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- END MODAL -->
+
               {% empty %}
                 <tr>
                   <td colspan="7" class="text-center py-4 text-muted">

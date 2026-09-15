@@ -44,6 +44,12 @@ class CategoryForm(forms.ModelForm):
                 raise forms.ValidationError("A category with this name already exists!")
         return name
 
+from datetime import date
+from django import forms
+from django.utils import timezone
+from .models import Event
+
+
 class EventForm(forms.ModelForm):
 
   class Meta:
@@ -75,14 +81,14 @@ class EventForm(forms.ModelForm):
             attrs={
                 'class': 'form-control',
                 'type': 'date',
-                'min': date.today().isoformat(),
+                'min': timezone.localdate().isoformat(),
             }
         ),
         'end_date': forms.DateInput(
             attrs={
                 'class': 'form-control',
                 'type': 'date',
-                'min': date.today().isoformat(),
+                'min': timezone.localdate().isoformat(),
             }
         ),
         'event_time': forms.TimeInput(
@@ -96,6 +102,37 @@ class EventForm(forms.ModelForm):
         ),
         'status': forms.Select(attrs={'class': 'form-control'}),
     }
+
+  def clean_name(self):
+    name = self.cleaned_data.get('name', '').strip()
+
+    # Case-insensitive duplicate check
+    existing_events = Event.objects.filter(name__iexact=name)
+
+    # Allow keeping the same name when editing an existing event
+    if self.instance and self.instance.pk:
+      existing_events = existing_events.exclude(pk=self.instance.pk)
+
+    if existing_events.exists():
+      raise forms.ValidationError(
+          f"An event named '{name}' already exists (names must be unique"
+          ' regardless of uppercase/lowercase).'
+      )
+
+    return name
+
+  def clean(self):
+    cleaned_data = super().clean()
+    event_date = cleaned_data.get('event_date')
+    end_date = cleaned_data.get('end_date')
+
+    # Date range validation
+    if event_date and end_date and end_date < event_date:
+      self.add_error(
+          'end_date', 'The end date cannot be earlier than the start date.'
+      )
+
+    return cleaned_data
 
   def clean_event_date(self):
     event_date = self.cleaned_data.get('event_date')
@@ -117,68 +154,110 @@ class EventForm(forms.ModelForm):
     return cleaned_data
 
 class RegistrationForm(forms.ModelForm):
+  first_name = forms.CharField(
+      max_length=100,
+      required=True,
+      widget=forms.TextInput(
+          attrs={'class': 'form-control', 'placeholder': 'Enter first name'}
+      ),
+  )
+  last_name = forms.CharField(
+      max_length=100,
+      required=True,
+      widget=forms.TextInput(
+          attrs={'class': 'form-control', 'placeholder': 'Enter last name'}
+      ),
+  )
 
-    class Meta:
+  class Meta:
+    model = Registration
+    fields = [
+        'event',
+        'email',
+        'phone',
+        'college',
+    ]
+    widgets = {
+        'event': forms.Select(attrs={'class': 'form-control'}),
+        'email': forms.EmailInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter email address',
+            }
+        ),
+        'phone': forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': 'Enter phone number'}
+        ),
+        'college': forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter college/institution name',
+            }
+        ),
+    }
 
-        model = Registration
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
 
-        fields = [
-            "event",
-            "full_name",
-            "email",
-            "phone",
-            "college",
-        ]
+    # Populate first_name and last_name when editing an existing registration
+    if self.instance and self.instance.pk and self.instance.full_name:
+      name_parts = self.instance.full_name.strip().split(' ', 1)
+      self.fields['first_name'].initial = name_parts[0]
+      if len(name_parts) > 1:
+        self.fields['last_name'].initial = name_parts[1]
 
-        widgets = {
+    # Explicitly enforce field rendering order
+    self.order_fields(
+        ['event', 'first_name', 'last_name', 'email', 'phone', 'college']
+    )
 
-            "event": forms.Select(attrs={"class": "form-control"}),
+  def clean(self):
+    cleaned_data = super().clean()
+    event = cleaned_data.get('event')
+    email = cleaned_data.get('email')
+    phone = cleaned_data.get('phone')
 
-            "full_name": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "Enter full name"
-            }),
+    # Duplicate email check for this specific event
+    if event and email:
+      email_query = Registration.objects.filter(
+          event=event, email__iexact=email
+      )
+      if self.instance and self.instance.pk:
+        email_query = email_query.exclude(pk=self.instance.pk)
 
-            "email": forms.EmailInput(attrs={
-                "class": "form-control",
-                "placeholder": "Enter email address"
-            }),
+      if email_query.exists():
+        self.add_error(
+            'email',
+            'A member with this email is already registered for this event!',
+        )
 
-            "phone": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "Enter phone number"
-            }),
+    # Duplicate phone check for this specific event
+    if event and phone:
+      phone_query = Registration.objects.filter(
+          event=event, phone=phone.strip()
+      )
+      if self.instance and self.instance.pk:
+        phone_query = phone_query.exclude(pk=self.instance.pk)
 
-            "college": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "Enter college/institution name"
-            }),
+      if phone_query.exists():
+        self.add_error(
+            'phone',
+            'A member with this phone number is already registered for this'
+            ' event!',
+        )
 
-        }
+    return cleaned_data
 
-    def clean(self):
-        cleaned_data = super().clean()
-        event = cleaned_data.get("event")
-        email = cleaned_data.get("email")
-        phone = cleaned_data.get("phone")
+  def save(self, commit=True):
+    instance = super().save(commit=False)
+    first_name = self.cleaned_data.get('first_name', '').strip()
+    last_name = self.cleaned_data.get('last_name', '').strip()
+    instance.full_name = f'{first_name} {last_name}'.strip()
 
-        if event and email:
-            email_query = Registration.objects.filter(event=event, email__iexact=email)
-            if self.instance and self.instance.pk:
-                email_query = email_query.exclude(pk=self.instance.pk)
+    if commit:
+      instance.save()
+    return instance
 
-            if email_query.exists():
-                self.add_error("email", "A member with this email is already registered for this event!")
-
-        if event and phone:
-            phone_query = Registration.objects.filter(event=event, phone=phone)
-            if self.instance and self.instance.pk:
-                phone_query = phone_query.exclude(pk=self.instance.pk)
-
-            if phone_query.exists():
-                self.add_error("phone", "A member with this phone number is already registered for this event!")
-
-        return cleaned_data
 class AttendanceForm(forms.ModelForm):
 
     class Meta:

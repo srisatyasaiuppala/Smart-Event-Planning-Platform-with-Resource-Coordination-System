@@ -6,6 +6,11 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from PIL import Image
 import qrcode
+import uuid
+from django.urls import reverse
+from PIL import Image
+from django.core.files.base import ContentFile
+from django.db.models.functions import Lower
 
 
 class Category(models.Model):
@@ -21,7 +26,7 @@ class Event(models.Model):
   category = models.ForeignKey(
       Category, on_delete=models.CASCADE, related_name="events"
   )
-  name = models.CharField(max_length=200, unique=True)
+  name = models.CharField(max_length=200)
   description = models.TextField()
   event_date = models.DateField()
   end_date = models.DateField(null=True, blank=True)
@@ -37,6 +42,15 @@ class Event(models.Model):
   )
   qr_code = models.ImageField(upload_to="event_qrcodes/", blank=True, null=True)
   created_at = models.DateTimeField(auto_now_add=True)
+
+  class Meta:
+    constraints = [
+        models.UniqueConstraint(
+            Lower("name"),
+            name="unique_case_insensitive_event_name",
+            violation_error_message="An event with this name already exists (case-insensitive).",
+        )
+    ]
 
   def save(self, *args, **kwargs):
     qr_data = (
@@ -71,22 +85,55 @@ class Event(models.Model):
   def __str__(self):
     return self.name
 
-
 class Registration(models.Model):
   event = models.ForeignKey(
-      Event, on_delete=models.CASCADE, related_name="registrations"
+      Event, on_delete=models.CASCADE, related_name='registrations'
   )
-  full_name = models.CharField(max_length=100)
+  full_name = models.CharField(max_length=150)
   email = models.EmailField()
-  phone = models.CharField(max_length=15)
+  phone = models.CharField(max_length=20)
   college = models.CharField(max_length=200)
+  ticket_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+  ticket_qr = models.ImageField(
+      upload_to='ticket_qrcodes/', blank=True, null=True
+  )
   registered_at = models.DateTimeField(auto_now_add=True)
 
   class Meta:
-    unique_together = ["event", "email"]
+    unique_together = ('event', 'email')
+
+  def save(self, *args, **kwargs):
+    # Ensure ticket_id exists
+    if not self.ticket_id:
+      self.ticket_id = uuid.uuid4()
+
+    # Generate QR Code image before database save if missing
+    if not self.ticket_qr:
+      verify_url = f'/attendance/verify/{self.ticket_id}/'
+
+      qr = qrcode.QRCode(
+          version=1,
+          error_correction=qrcode.constants.ERROR_CORRECT_M,
+          box_size=10,
+          border=2,
+      )
+      qr.add_data(verify_url)
+      qr.make(fit=True)
+
+      img = qr.make_image(fill_color='black', back_color='white').convert(
+          'RGB'
+      )
+      buffer = BytesIO()
+      img.save(buffer, format='PNG')
+      filename = f'ticket_{self.ticket_id}.png'
+
+      self.ticket_qr.save(filename, ContentFile(buffer.getvalue()), save=False)
+      buffer.close()
+
+    super().save(*args, **kwargs)
 
   def __str__(self):
-    return self.full_name
+    return f'{self.full_name} - {self.event.name}'
 
 
 class Attendance(models.Model):

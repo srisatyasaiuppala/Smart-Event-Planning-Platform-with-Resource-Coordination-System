@@ -10,10 +10,18 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse,HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 import qrcode
 from .bot import generate_bot_response, get_or_create_bot_user
+from django.http import JsonResponse
+from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.csrf import csrf_exempt
+from google import genai
+from google.genai import types
+from .models import Attendance, Category, Event, Message, Registration
+from django.utils import timezone
+from django.urls import reverse
 
 from .forms import (
     AttendanceForm,
@@ -309,7 +317,17 @@ def create_event(request):
     return redirect("user_event_list")
 
   if request.method == "POST":
-    form = EventForm(request.POST)
+    form = EventForm(request.POST, request.FILES or None)
+
+    # Pre-check case-insensitive name uniqueness before saving
+    raw_name = request.POST.get("name", "").strip()
+    if raw_name and Event.objects.filter(name__iexact=raw_name).exists():
+      messages.error(
+          request,
+          f"An event named '{raw_name}' already exists (case-insensitive duplicate).",
+      )
+      return render(request, "events/create_event.html", {"form": form})
+
     if form.is_valid():
       event = form.save()
       messages.success(
@@ -322,6 +340,7 @@ def create_event(request):
       )
   else:
     form = EventForm()
+
   return render(request, "events/create_event.html", {"form": form})
 
 
@@ -371,63 +390,143 @@ def delete_event(request, pk):
 
 @login_required
 def register_member(request):
-  if request.method == "POST":
-    form = RegistrationForm(request.POST)
+  today = timezone.localdate()
+
+  # Queryset for events that are today or in the future
+  upcoming_events_qs = Event.objects.filter(event_date__gte=today).order_by(
+      'event_date', 'event_time'
+  )
+
+  if request.method == 'POST':
+    # 1. Grab first_name and last_name, combine into full_name
+    first_name = request.POST.get('first_name', '').strip()
+    last_name = request.POST.get('last_name', '').strip()
+    full_name = f'{first_name} {last_name}'.strip()
+
+    # Copy POST data so we can inject full_name into form validation
+    data = request.POST.copy()
+    if full_name:
+      data['full_name'] = full_name
+
+    form = RegistrationForm(data)
+
+    # Restrict dropdown choices during validation to active upcoming events
+    if 'event' in form.fields:
+      form.fields['event'].queryset = upcoming_events_qs
+
     if form.is_valid():
       registration = form.save(commit=False)
 
-      if (
-          registration.event.event_date
-          and registration.event.event_date < date.today()
-      ):
-        messages.error(
-            request, "Registration closed: This event has already ended."
-        )
-        return render(request, "members/register_member.html", {"form": form})
-
-      if not registration.email and request.user.email:
-        registration.email = request.user.email
-
-      if not registration.full_name:
+      # 2. Assign combined name or fallback
+      if full_name:
+        registration.full_name = full_name
+      elif not registration.full_name:
         registration.full_name = (
             request.user.get_full_name() or request.user.username
         )
 
+      # 3. Fallbacks for User Info
+      if not registration.email and request.user.email:
+        registration.email = request.user.email.strip().lower()
+      elif registration.email:
+        registration.email = registration.email.strip().lower()
+
+      # 4. Block registration for past/ended events
+      if (
+          registration.event.event_date
+          and registration.event.event_date < today
+      ):
+        messages.error(
+            request,
+            f"Registration closed: '{registration.event.name}' has already"
+            ' ended.',
+        )
+        return render(
+            request,
+            'members/register_member.html',
+            {'form': form, 'edit_mode': False},
+        )
+
+      # 5. Duplicate Prevention: Check if email or phone already exists for this event
+      duplicate_query = Q(email__iexact=registration.email)
+      if hasattr(registration, 'phone') and registration.phone:
+        duplicate_query |= Q(phone=registration.phone.strip())
+
+      is_duplicate = (
+          Registration.objects.filter(event=registration.event)
+          .filter(duplicate_query)
+          .exists()
+      )
+
+      if is_duplicate:
+        messages.warning(
+            request,
+            f'Duplicate Registration: Attendee ({registration.email}) is'
+            f" already registered for '{registration.event.name}'.",
+        )
+        return render(
+            request,
+            'members/register_member.html',
+            {'form': form, 'edit_mode': False},
+        )
+
+      # 6. Save registration and generate ticket
       registration.save()
 
+      # 7. Create confirmation notification
       create_notification(
           user=request.user,
-          title="Registration Confirmed",
+          title='Registration Confirmed',
           message=(
-              f"You have successfully registered for {registration.event.name}!"
+              f'You have successfully registered for {registration.event.name}!'
           ),
-          icon="fas fa-calendar-check text-success",
+          icon='fas fa-calendar-check text-success',
       )
 
-      messages.success(request, "Registration successful!")
-      return (
-          redirect("member_list")
-          if (request.user.is_staff or request.user.is_superuser)
-          else redirect("my_registered_events")
+      messages.success(
+          request,
+          f"Registration confirmed for '{registration.event.name}'! Your"
+          ' attendance ticket has been generated.',
       )
+
+      if request.user.is_staff or request.user.is_superuser:
+        return redirect('member_list')
+      return redirect('my_ticket', reg_id=registration.id)
+
+    else:
+      messages.error(request, 'Please correct the errors below.')
+      return render(
+          request,
+          'members/register_member.html',
+          {'form': form, 'edit_mode': False},
+      )
+
   else:
+    # GET Request: Pre-fill defaults
     initial_data = {}
     if request.user.email:
-      initial_data["email"] = request.user.email
-    if request.user.username:
-      initial_data["full_name"] = (
-          request.user.get_full_name() or request.user.username
-      )
+      initial_data['email'] = request.user.email
+
+    # Pre-fill First and Last Name if present on the User account
+    initial_data['first_name'] = request.user.first_name or ''
+    initial_data['last_name'] = request.user.last_name or ''
+
+    # Support QR scan parameter (e.g. /register/?event=3)
+    preselected_event_id = request.GET.get('event')
+    if preselected_event_id:
+      initial_data['event'] = preselected_event_id
 
     form = RegistrationForm(initial=initial_data)
-    if "event" in form.fields and not (
-        request.user.is_staff or request.user.is_superuser
-    ):
-      form.fields["event"].queryset = Event.objects.filter(
-          event_date__gte=date.today()
-      ).order_by("event_date")
 
-  return render(request, "members/register_member.html", {"form": form})
+    # Filter dropdown to only upcoming events
+    if 'event' in form.fields:
+      form.fields['event'].queryset = upcoming_events_qs
+
+  return render(
+      request,
+      'members/register_member.html',
+      {'form': form, 'edit_mode': False},
+  )
 
 
 @login_required
@@ -511,10 +610,11 @@ def delete_attendance(request, pk):
 @login_required
 def user_dashboard(request):
   user = request.user
-  today = date.today()
+  today = timezone.localdate()
 
   total_events_count = Event.objects.count()
 
+  # Match registrations belonging to this user
   conditions = Q()
   if user.email:
     conditions |= Q(email__iexact=user.email)
@@ -524,31 +624,39 @@ def user_dashboard(request):
   if user_full_name:
     conditions |= Q(full_name__iexact=user_full_name)
 
+  # Fetch all registrations for this user
   user_registrations = (
       Registration.objects.filter(conditions)
       .distinct()
-      .select_related("event")
+      .select_related('event')
   )
   registrations_count = user_registrations.count()
 
+  # Active upcoming tickets (events occurring today or in the future)
+  upcoming_tickets = (
+      user_registrations.filter(event__event_date__gte=today)
+      .exclude(event__status='Completed')
+      .order_by('event__event_date', 'event__event_time')
+  )
+
+  # Platform event counts
   upcoming_count = Event.objects.filter(
-      event_date__gte=today, status="Upcoming"
+      event_date__gte=today, status='Upcoming'
   ).count()
   completed_count = Event.objects.filter(
-      Q(event_date__lt=today) | Q(status="Completed")
+      Q(event_date__lt=today) | Q(status='Completed')
   ).count()
 
   context = {
-      "total_events_count": total_events_count,
-      "registrations_count": registrations_count,
-      "upcoming_count": upcoming_count,
-      "completed_count": completed_count,
-      "recent_registrations": (
-          user_registrations.order_by("-registered_at")[:5]
-      ),
+      'total_events_count': total_events_count,
+      'registrations_count': registrations_count,
+      'upcoming_count': upcoming_count,
+      'completed_count': completed_count,
+      'user_registrations': user_registrations.order_by('-registered_at'),
+      'upcoming_tickets': upcoming_tickets,
+      'recent_registrations': user_registrations.order_by('-registered_at')[:5],
   }
-  return render(request, "user/user_dashboard.html", context)
-
+  return render(request, 'user/user_dashboard.html', context)
 
 @login_required
 def user_event_list(request):
@@ -755,43 +863,300 @@ def send_message(request):
   return redirect(request.META.get("HTTP_REFERER", "dashboard"))
 
 
-@login_required
-def chat_room(request):
-  bot_user = get_or_create_bot_user()
+def get_project_bot_reply(user, text):
+  msg = text.lower().strip()
+  today = timezone.localdate()
 
-  if request.method == "POST":
-    content = request.POST.get("content", "").strip()
+  # 1. Greetings
+  if any(w in msg for w in ['hi', 'hello', 'hey', 'start', 'help']):
+    return (
+        f'Hello {user.first_name or user.username}! 👋 I am your Event'
+        ' Platform Assistant.\n\nYou can ask me about:\n• "Upcoming events" or'
+        ' "Event list"\n• "My registrations" (Events you joined)\n• "How to'
+        ' register" (Step-by-step guide)\n• "Registrations list" (Total'
+        ' registered participants)\n• "Event categories"\n• "Theme /'
+        ' Customization"\n• "Mark attendance" (Admin)\n• "Create event" (Admin)'
+    )
+
+  # 2. User's Personal Registrations
+  elif any(
+      w in msg
+      for w in [
+          'my registration',
+          'my registered',
+          'my events',
+          'my event',
+          'am i registered',
+          'events i joined',
+      ]
+  ):
+    my_regs = Registration.objects.filter(
+        Q(email__iexact=user.email)
+        | Q(full_name__iexact=user.get_full_name())
+        | Q(full_name__iexact=user.username)
+    )
+
+    if not my_regs.exists():
+      return (
+          f'No event registrations found for {user.username} (Email:'
+          f' {user.email or "not set"}).\nClick "Register for Event" in the'
+          ' sidebar to sign up for upcoming events!'
+      )
+
+    reply = f'🎟️ Events registered by {user.first_name or user.username}:\n'
+    for r in my_regs:
+      ev_date = (
+          r.event.event_date.strftime('%b %d, %Y')
+          if r.event.event_date
+          else 'TBA'
+      )
+      reply += f'• {r.event.name} | Date: {ev_date} | Venue: {r.event.venue}\n'
+    return reply.strip()
+
+  # 3. All Registrations / Member Count Directory
+  elif any(
+      w in msg
+      for w in [
+          'all registrations',
+          'registrations list',
+          'registration list',
+          'registrations',
+          'total members',
+          'how many registered',
+          'participants',
+          'member list',
+      ]
+  ):
+    total = Registration.objects.count()
+    if user.is_staff or user.is_superuser:
+      recent = Registration.objects.select_related('event').order_by(
+          '-registered_at'
+      )[:5]
+      reply = f'👥 Platform Registrations ({total} total entries):\n'
+      for r in recent:
+        reply += f'• {r.full_name} ➔ {r.event.name} ({r.college})\n'
+      reply += '\nView the complete list under "Members" -> "Member List".'
+      return reply.strip()
+    else:
+      return (
+          f'👥 Platform Statistics: There are currently {total} total registered'
+          ' participant entries across all events.'
+      )
+
+  # 4. How to Register Guide
+  elif any(
+      w in msg
+      for w in [
+          'how to register',
+          'how to join',
+          'how do i register',
+          'registration process',
+          'register member',
+          'steps to register',
+      ]
+  ):
+    return (
+        '📝 To register for an event:\n1. Click "Register for Event" in the'
+        ' left sidebar.\n2. Or scan the QR code from the "Registration QR"'
+        ' page.\n3. Fill in your Name, Email, Phone, College, and select your'
+        ' Event.\n4. Click Submit to save your registration.'
+    )
+
+  # 5. Upcoming Events (Future dates only)
+  elif any(
+      w in msg
+      for w in [
+          'upcoming',
+          'next event',
+          'future event',
+          'what is next',
+          'coming soon',
+      ]
+  ):
+    upcoming_events = Event.objects.filter(event_date__gte=today).order_by(
+        'event_date', 'event_time'
+    )
+    if not upcoming_events.exists():
+      return '📅 No upcoming events scheduled at the moment. Check back soon!'
+
+    reply = f'⏳ Upcoming Events (From {today.strftime("%b %d, %Y")}):\n'
+    for ev in upcoming_events:
+      date_str = (
+          ev.event_date.strftime('%b %d, %Y') if ev.event_date else 'TBA'
+      )
+      time_str = ev.event_time.strftime('%I:%M %p') if ev.event_time else ''
+      reply += (
+          f'• {ev.name} | Date: {date_str} | Time: {time_str} | Venue:'
+          f' {ev.venue}\n'
+      )
+    return reply.strip()
+
+  # 6. All Events / Event Directory
+  elif any(
+      w in msg
+      for w in [
+          'event list',
+          'list events',
+          'all events',
+          'events list',
+          'schedule',
+          'events',
+      ]
+  ):
+    all_events = Event.objects.all().order_by('-event_date')[:10]
+    if not all_events.exists():
+      return 'There are currently no events registered in the platform.'
+
+    reply = '📋 All Events Directory:\n'
+    for ev in all_events:
+      date_str = (
+          ev.event_date.strftime('%b %d, %Y') if ev.event_date else 'TBA'
+      )
+      status_tag = (
+          '🟢 Upcoming'
+          if (ev.event_date and ev.event_date >= today)
+          else '⚪ Completed'
+      )
+      reply += (
+          f'• {ev.name} ({status_tag}) | Date: {date_str} | Venue: {ev.venue}\n'
+      )
+    return reply.strip()
+
+  # 7. Categories
+  elif any(w in msg for w in ['category', 'categories', 'types']):
+    cats = Category.objects.all()
+    if cats.exists():
+      cat_list = [f'{c.name} ({c.category_code})' for c in cats]
+      return '📂 Available Event Categories:\n• ' + '\n• '.join(cat_list)
+    return 'No event categories have been created yet.'
+
+  # 8. Admin Create Event
+  elif any(w in msg for w in ['create event', 'add event', 'new event']):
+    if user.is_staff or user.is_superuser:
+      return (
+          '🛠️ Admin Event Creation:\n1. Click "Events" in the left sidebar.\n2.'
+          ' Select "Create Event".\n3. Fill in Name, Category, Date, Time, and'
+          ' Venue.\n4. Save (A QR code will generate automatically).'
+      )
+    return 'Event creation is restricted to Admin accounts.'
+
+  # 9. Attendance
+  elif any(w in msg for w in ['attendance', 'mark attendance', 'present']):
+    if user.is_staff or user.is_superuser:
+      return (
+          '📋 Attendance Flow:\n1. Navigate to "Attendance" -> "Mark'
+          ' Attendance".\n2. Select the event and mark attendees Present or'
+          ' Absent.\n3. View records anytime under "Attendance List".'
+      )
+    return (
+        'Attendance is marked by event administrators during event check-ins.'
+    )
+
+  # 10. Theme / Customization
+  elif any(
+      w in msg
+      for w in [
+          'customize',
+          'theme',
+          'color',
+          'dark mode',
+          'light mode',
+          'appearance',
+          'change look',
+      ]
+  ):
+    if user.is_staff or user.is_superuser:
+      return (
+          '🎨 Customization Guide (Admin):\n1. Click the Sliders icon'
+          ' (Customize) in the top navbar.\n2. Choose your preferred Navbar and'
+          ' Sidebar colors.\n3. Adjust font sizing or toggle between Dark and'
+          ' Light mode.\n4. Settings apply immediately to your dashboard.'
+      )
+    return (
+        '🎨 Interface Customization:\nDashboard themes and color schemes are'
+        ' managed by platform administrators via the top navigation controls.'
+    )
+
+  # 11. Fallback / Out of Scope
+  else:
+    return (
+        "I specialize only in this Event Management System (events,"
+        " registrations, categories, and attendance).\n\n💡 For general"
+        " questions, search queries, or weather, please use the blue AI"
+        " Assistant popup at the bottom-right corner!"
+    )
+  
+@login_required(login_url='login')
+def chat_room(request):
+  # Get or create the EventBot system user
+  bot_user, _ = User.objects.get_or_create(
+      username='EventBot', defaults={'first_name': 'Event', 'last_name': 'Bot'}
+  )
+
+  if request.method == 'POST':
+    content = request.POST.get('content', '').strip()
     if content:
+      # 1. Save user's message
       Message.objects.create(
           sender=request.user, receiver=bot_user, content=content
       )
-      bot_reply = generate_bot_response(request.user, content)
+
+      # 2. Get local project reply
+      bot_reply = get_project_bot_reply(request.user, content)
+
+      # 3. Save bot's reply
       Message.objects.create(
           sender=bot_user, receiver=request.user, content=bot_reply
       )
-      return redirect("chat_room")
 
-  chat_messages = Message.objects.filter(
-      (Q(sender=request.user) & Q(receiver=bot_user))
-      | (Q(sender=bot_user) & Q(receiver=request.user))
-  ).order_by("timestamp")
+    return redirect('chat_room')
 
-  Message.objects.filter(
-      sender=bot_user, receiver=request.user, is_read=False
-  ).update(is_read=True)
+  # Fetch all messages between user and bot
+  chat_messages = (
+      Message.objects.filter(
+          sender__in=[request.user, bot_user],
+          receiver__in=[request.user, bot_user],
+      )
+      .select_related('sender')
+      .order_by('timestamp')
+  )
 
   return render(
-      request, "chat/chat_room.html", {"chat_messages": chat_messages}
+      request, 'chat/chat_room.html', {'chat_messages': chat_messages}
+  )
+
+@login_required(login_url='login')
+def qr_code_page(request):
+  today = timezone.localdate()
+
+  upcoming_events = Event.objects.filter(event_date__gte=today).order_by(
+      'event_date', 'event_time'
+  )
+
+  return render(
+      request,
+      'events/qr_page.html',
+      {'events': upcoming_events, 'today': today},
   )
 
 
-def qr_code_page(request):
-  return render(request, "events/qr_page.html")
+def admin_global_registration_qr(request, event_id=None):
+  today = timezone.localdate()
 
 
-def admin_global_registration_qr(request):
+  if event_id:
+    event = get_object_or_404(Event, id=event_id)
+    if event.event_date and event.event_date < today:
+      return HttpResponseBadRequest(
+          'Registration QR cannot be generated for completed events.'
+      )
+    relative_url = f"{reverse('register_member')}?event={event.id}"
+  else:
+  
+    relative_url = reverse('register_member')
 
-  registration_url = 'http://127.0.0.1:8000/register/'
+
+  registration_url = request.build_absolute_uri(relative_url)
 
   qr = qrcode.QRCode(
       version=1,
@@ -806,20 +1171,153 @@ def admin_global_registration_qr(request):
   buffer = BytesIO()
   img.save(buffer, format='PNG')
   buffer.seek(0)
+
   return HttpResponse(buffer.getvalue(), content_type='image/png')
 
 
 def public_event_registration(request):
-  if request.method == "POST":
+  today = timezone.localdate()
+
+  # Only permit upcoming or today's active events
+  upcoming_events_qs = Event.objects.filter(event_date__gte=today).order_by(
+      'event_date', 'event_time'
+  )
+
+  if request.method == 'POST':
     form = RegistrationForm(request.POST)
+
+    # Restrict form validation choices strictly to future/today events
+    if 'event' in form.fields:
+      form.fields['event'].queryset = upcoming_events_qs
+
     if form.is_valid():
-      form.save()
+      registration = form.save(commit=False)
+      event = registration.event
+      email = registration.email.strip().lower() if registration.email else ''
+      phone = registration.phone.strip() if hasattr(registration, 'phone') and registration.phone else ''
+
+      # 1. Block registration if the event date has already passed
+      if event.event_date and event.event_date < today:
+        messages.error(
+            request,
+            f"Registration closed: '{event.name}' has already taken place on {event.event_date.strftime('%b %d, %Y')}."
+        )
+        return render(request, 'events/public_registration.html', {'form': form})
+
+      # 2. Duplicate Prevention: Verify attendee has not already registered with this email or phone
+      duplicate_filter = Q(email__iexact=email)
+      if phone:
+        duplicate_filter |= Q(phone=phone)
+
+      if Registration.objects.filter(event=event).filter(duplicate_filter).exists():
+        messages.warning(
+            request,
+            f"Duplicate Registration: You have already registered for '{event.name}' with this email or phone number."
+        )
+        return render(request, 'events/public_registration.html', {'form': form})
+
+      # 3. Save instance (auto-generates ticket_id and attendance QR)
+      registration.email = email
+      registration.save()
+
       messages.success(
           request,
-          "Your registration has been submitted successfully! Welcome.",
+          f"Registration confirmed for '{event.name}'! Your attendance ticket has been generated."
       )
-      return redirect("public_event_registration")
-  else:
-    form = RegistrationForm()
+      return redirect('my_ticket', reg_id=registration.id)
 
-  return render(request, "events/public_registration.html", {"form": form})
+  else:
+    # Handle pre-selected event from URL parameter (e.g., from an event-specific QR code)
+    initial_data = {}
+    event_id = request.GET.get('event')
+    if event_id:
+      initial_data['event'] = event_id
+
+    form = RegistrationForm(initial=initial_data)
+
+    # Filter dropdown options so past events are never selectable
+    if 'event' in form.fields:
+      form.fields['event'].queryset = upcoming_events_qs
+
+  return render(request, 'events/public_registration.html', {'form': form})
+
+@csrf_exempt
+def global_ai_chatbot_reply(request):
+  if request.method == "POST":
+    try:
+      data = json.loads(request.body)
+      prompt = data.get("message", "").strip()
+
+      if not prompt:
+        return JsonResponse(
+            {"reply": "Please enter a valid question."}, status=400
+        )
+      
+      client = genai.Client(api_key="REMOVED_GEMINI_API_KEY")
+
+      config = types.GenerateContentConfig(
+          tools=[types.Tool(google_search=types.GoogleSearch())],
+          system_instruction=(
+              "You are an intelligent, helpful AI assistant. Answer user"
+              " questions accurately, concisely, and use plain clean text or"
+              " short bullet points. Do not mention API limitations."
+          ),
+      )
+
+      response = client.models.generate_content(
+          model="gemini-2.5-flash", contents=prompt, config=config
+      )
+
+      reply = response.text if response.text else "No response received."
+      return JsonResponse({"reply": reply})
+
+    except Exception as e:
+      return JsonResponse(
+          {"reply": f"Error answering question: {str(e)}"}, status=500
+      )
+
+  return JsonResponse({"error": "Invalid request"}, status=400)
+
+# 1. View & Download Personal Ticket
+def my_ticket_view(request, reg_id):
+  registration = get_object_or_404(Registration, id=reg_id)
+  return render(request, 'events/ticket.html', {'reg': registration})
+
+
+# 2. Admin Live Camera QR Scanner
+@staff_member_required(login_url='login')
+def scan_attendance_view(request):
+  return render(request, 'events/scan_attendance.html')
+
+
+# 3. Verify Scanned QR and Record Attendance
+@staff_member_required(login_url='login')
+def verify_ticket_attendance(request, ticket_id):
+  registration = get_object_or_404(Registration, ticket_id=ticket_id)
+  today = timezone.localdate()
+
+  # Check if attendance is already recorded today
+  attendance, created = Attendance.objects.get_or_create(
+      registration=registration,
+      attendance_date=today,
+      defaults={'status': 'Present'},
+  )
+
+  if created:
+    status = 'success'
+    msg = f"Attendance Marked: {registration.full_name} is marked Present for '{registration.event.name}'."
+  else:
+    status = 'already_marked'
+    msg = f"Notice: {registration.full_name} was already checked in today."
+
+  if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    return JsonResponse({
+        'status': status,
+        'message': msg,
+        'name': registration.full_name,
+        'event': registration.event.name,
+        'college': registration.college,
+    })
+
+  messages.info(request, msg)
+  return redirect('scan_attendance')

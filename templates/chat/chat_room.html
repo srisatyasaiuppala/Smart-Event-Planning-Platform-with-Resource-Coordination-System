@@ -12,7 +12,7 @@
       <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
           <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-          <li class="breadcrumb-item active">AI Assistant</li>
+          <li class="breadcrumb-item active">Project Bot</li>
         </ol>
       </div>
     </div>
@@ -24,12 +24,12 @@
     <div class="card card-primary card-outline direct-chat direct-chat-primary shadow-sm" style="max-width: 900px; margin: 0 auto;">
       <div class="card-header">
         <h3 class="card-title font-weight-bold">
-          <i class="fas fa-comments text-info mr-1"></i> Personal Helpdesk & Assistant
+          <i class="fas fa-comments text-info mr-1"></i> Event Platform Helpdesk
         </h3>
       </div>
       
       <div class="card-body">
-        <div class="direct-chat-messages p-3" id="chatContainer" style="height: 420px; overflow-y: auto;">
+        <div class="direct-chat-messages p-3" id="chatContainer" style="height: 440px; overflow-y: auto;">
           {% for msg in chat_messages %}
             <div class="direct-chat-msg {% if msg.sender == request.user %}right{% endif %} mb-3">
               <div class="direct-chat-infos clearfix">
@@ -37,7 +37,7 @@
                   {% if msg.sender == request.user %}
                     You
                   {% else %}
-                    🤖 EventBot <span class="badge badge-info text-xs ml-1">Bot</span>
+                    🤖 Project Bot
                   {% endif %}
                 </span>
                 <span class="direct-chat-timestamp {% if msg.sender == request.user %}float-left{% else %}float-right{% endif %} text-muted text-xs">
@@ -45,14 +45,12 @@
                 </span>
               </div>
               
-              <div class="direct-chat-text {% if msg.sender == request.user %}bg-primary text-white border-0{% else %}bg-light text-dark border-info shadow-sm{% endif %} p-2 rounded mt-1" style="white-space: pre-wrap;">
-                {{ msg.content|linebreaksbr }}
-              </div>
+              <div class="direct-chat-text {% if msg.sender == request.user %}bg-primary text-white border-0{% else %}bg-light text-dark border-info shadow-sm{% endif %} p-2 rounded mt-1" style="white-space: pre-wrap;">{{ msg.content }}</div>
             </div>
           {% empty %}
             <div class="text-center text-muted py-5">
               <i class="fas fa-robot fa-3x mb-3 text-info"></i>
-              <p>Hi {{ request.user.first_name|default:request.user.username }}! Ask me about <strong>"Upcoming events"</strong> or <strong>"My registrations"</strong> to get started.</p>
+              <p>Hi {{ request.user.first_name|default:request.user.username }}! Ask me about <strong>"Upcoming events"</strong>, <strong>"How to register"</strong>, or <strong>"My registrations"</strong>.</p>
             </div>
           {% endfor %}
         </div>
@@ -62,7 +60,7 @@
         <form method="POST" action="{% url 'chat_room' %}">
           {% csrf_token %}
           <div class="input-group">
-            <input type="text" name="content" placeholder="Ask EventBot a question..." class="form-control" required autocomplete="off">
+            <input type="text" name="content" placeholder="Ask about events, registration, attendance..." class="form-control" required autocomplete="off" autofocus>
             <span class="input-group-append">
               <button type="submit" class="btn btn-primary font-weight-bold px-4">
                 <i class="fas fa-paper-plane mr-1"></i> Send

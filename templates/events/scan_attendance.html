@@ -1,0 +1,89 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 font-weight-bold"><i class="fas fa-camera text-success mr-2"></i>Scan Attendance QR</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+          <li class="breadcrumb-item active">QR Attendance</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-md-7">
+        <div class="card card-success card-outline shadow-sm">
+          <div class="card-header text-center">
+            <h5 class="card-title font-weight-bold w-100 m-0">Live Camera Ticket Scanner</h5>
+          </div>
+          <div class="card-body text-center">
+            <p class="text-muted mb-3">Position the attendee's ticket QR code in front of the lens.</p>
+            
+            <div id="qr-reader" style="width: 100%; max-width: 480px; margin: 0 auto; border-radius: 12px; overflow: hidden;"></div>
+
+            <div id="scanResult" class="mt-4" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HTML5-QRCode Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+let scanLock = false;
+const feedbackBox = document.getElementById('scanResult');
+
+function onScanSuccess(decodedText) {
+  if (scanLock) return;
+  scanLock = true;
+
+  let verifyUrl = decodedText.trim();
+  if (!verifyUrl.startsWith("http") && !verifyUrl.startsWith("/")) {
+    verifyUrl = "/attendance/verify/" + verifyUrl + "/";
+  }
+
+  feedbackBox.style.display = "block";
+  feedbackBox.className = "alert alert-info font-weight-bold";
+  feedbackBox.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Verifying ticket and marking attendance...';
+
+  fetch(verifyUrl, {
+    headers: { "X-Requested-With": "XMLHttpRequest" }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      feedbackBox.className = "alert alert-success font-weight-bold";
+      feedbackBox.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${data.message}<br><span class="font-weight-normal text-sm">${data.name} (${data.college})</span>`;
+    } else {
+      feedbackBox.className = "alert alert-warning font-weight-bold";
+      feedbackBox.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${data.message}`;
+    }
+    setTimeout(() => { scanLock = false; }, 3000);
+  })
+  .catch(() => {
+    feedbackBox.className = "alert alert-danger font-weight-bold";
+    feedbackBox.innerHTML = '<i class="fas fa-times-circle mr-2"></i> Unrecognized or invalid QR code.';
+    setTimeout(() => { scanLock = false; }, 3000);
+  });
+}
+
+const html5QrCode = new Html5QrcodeScanner(
+  "qr-reader", 
+  { fps: 10, qrbox: { width: 250, height: 250 } },
+  /* verbose= */ false
+);
+html5QrCode.render(onScanSuccess);
+</script>
+{% endblock %}

@@ -4,49 +4,101 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Event Registration</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+  
+  <!-- Google Font & FontAwesome -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700&display=fallback">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  
+  <!-- Bootstrap 4 / AdminLTE -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      font-family: 'Source Sans Pro', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 15px;
+    }
+    .register-card {
+      max-width: 540px;
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+    .form-control {
+      height: 44px;
+      border-radius: 6px;
+    }
+    .form-control:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 0.2rem rgba(2, 132, 199, 0.25);
+    }
+  </style>
 </head>
-<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh; padding: 20px 0;">
+<body>
 
-<div class="container" style="max-width: 580px;">
-  <div class="card card-primary card-outline shadow">
-    <div class="card-header text-center bg-white">
-      <h3 class="font-weight-bold text-primary mb-0">
-        <i class="fas fa-calendar-check mr-2"></i>Event Registration Form
-      </h3>
-      <p class="text-muted small mb-0 mt-1">Please fill in your details to register for the event</p>
+<div class="register-card card bg-white">
+  <!-- Card Header -->
+  <div class="card-header text-center bg-white border-bottom py-4">
+    <div class="mb-2">
+      <i class="fas fa-calendar-check fa-3x text-primary"></i>
     </div>
+    <h3 class="font-weight-bold text-dark mb-1">Event Registration Form</h3>
+    <p class="text-muted small mb-0">Please fill in your details to reserve your event entry</p>
+  </div>
 
-    <div class="card-body p-4">
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-success text-center">
-            <i class="fas fa-check-circle mr-1"></i> {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
+  <div class="card-body p-4">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
+          <i class="fas fa-check-circle mr-1"></i> {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      {% endfor %}
+    {% endif %}
 
-      <form method="POST">
-        {% csrf_token %}
-        
-        {% for field in form %}
-          <div class="form-group mb-3">
-            <label class="font-weight-bold text-dark">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-              <div class="text-danger small font-weight-bold mt-1">{{ field.errors.0 }}</div>
-            {% endif %}
-          </div>
-        {% endfor %}
+    <form method="POST" id="registrationForm">
+      {% csrf_token %}
+      
+      {% for field in form %}
+        <div class="form-group mb-3">
+          <label class="font-weight-bold text-secondary mb-1">
+            {{ field.label }} {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+          </label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger small font-weight-bold mt-1">
+              <i class="fas fa-exclamation-circle mr-1"></i>{{ field.errors.0 }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
 
-        <button type="submit" class="btn btn-primary btn-block font-weight-bold py-2 mt-4 shadow-sm">
-          <i class="fas fa-paper-plane mr-1"></i> Submit Registration
-        </button>
-      </form>
-    </div>
+      <button type="submit" class="btn btn-primary btn-block font-weight-bold py-2 mt-4 shadow-sm" style="background-color: #0284c7; border-color: #0284c7;">
+        <i class="fas fa-paper-plane mr-1"></i> Submit Registration
+      </button>
+    </form>
   </div>
 </div>
+
+<!-- Auto-apply styling to Django raw form fields -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var inputs = document.querySelectorAll('#registrationForm input, #registrationForm select, #registrationForm textarea');
+    inputs.forEach(function(el) {
+      if (el.type !== 'submit' && el.type !== 'checkbox' && el.type !== 'radio' && el.type !== 'hidden') {
+        el.classList.add('form-control');
+      }
+    });
+  });
+</script>
 
 </body>
 </html>

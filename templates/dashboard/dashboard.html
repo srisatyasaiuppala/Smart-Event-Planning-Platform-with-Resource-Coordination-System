@@ -57,29 +57,41 @@
       {% endif %}
 
       <!-- 2. MATCHING CATEGORIES (Only shown if categories exist) -->
-      {% if categories %}
-      <div class="card card-success shadow-sm mb-4">
-        <div class="card-header"><h3 class="card-title font-weight-bold"><i class="fas fa-folder mr-2"></i>Categories ({{ categories.count }})</h3></div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover table-striped mb-0">
-              <thead class="bg-success text-white">
-                <tr><th>#</th><th>Category Name</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                {% for category in categories %}
-                  <tr>
-                    <td class="font-weight-bold">{{ forloop.counter }}</td>
-                    <td class="font-weight-bold">{{ category.name }}</td>
-                    <td>{{ category.description|default:"-" }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      {% endif %}
+{% if categories %}
+<div class="card card-success shadow-sm mb-4">
+  <div class="card-header">
+    <h3 class="card-title font-weight-bold">
+      <i class="fas fa-folder mr-2"></i>Categories ({{ categories.count }})
+    </h3>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-striped mb-0">
+        <thead class="bg-success text-white">
+          <tr>
+            <th style="width: 10%">#</th>
+            <th>Category Name</th>
+            <th>Category Code</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for category in categories %}
+            <tr>
+              <td class="font-weight-bold">{{ forloop.counter }}</td>
+              <td class="font-weight-bold">{{ category.name }}</td>
+              <td>
+                <span class="badge badge-info font-weight-normal px-2 py-1">
+                  {{ category.category_code }}
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
 
       <!-- 3. MATCHING MEMBERS (Only shown if members exist) -->
       {% if members %}

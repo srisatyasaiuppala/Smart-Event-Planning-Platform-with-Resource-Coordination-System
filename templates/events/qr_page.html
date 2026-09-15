@@ -1,7 +1,7 @@
 {% extends 'base/base.html' %}
 
 {% block content %}
-<div class="content-wrapper" style="padding: 25px;">
+<div class="container-fluid" style="padding: 20px 10px;">
     <!-- Blue Header Card -->
     <div style="background-color: #0284c7; color: white; padding: 18px 24px; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Main Content Box -->
-    <div style="background: white; padding: 40px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;">
+    <div style="background: white; padding: 40px 20px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;">
         <h4 style="color: #1e293b; font-weight: 700; margin-bottom: 8px;">Scan to Register for Events</h4>
         <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">
             Scan this QR code with any mobile camera to open the registration form.
@@ -19,7 +19,7 @@
 
         <!-- QR Code Container -->
         <div style="display: inline-block; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; background: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.04);">
-            <img src="{% url 'admin_global_registration_qr' %}" alt="Registration QR Code" style="width: 260px; height: 260px; display: block;" />
+            <img src="{% url 'admin_global_registration_qr' %}" alt="Registration QR Code" style="width: 250px; height: 250px; display: block;" />
         </div>
 
         <!-- "OR" Divider -->
@@ -34,7 +34,7 @@
             <input 
                 type="text" 
                 id="registrationUrlInput" 
-                value="http://127.0.0.1:8000/register/" 
+                value="{{ request.scheme }}://{{ request.get_host }}/register/" 
                 readonly 
                 style="flex: 1; border: none; background: transparent; padding: 10px 14px; font-size: 0.9rem; color: #334155; outline: none;"
             />

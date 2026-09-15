@@ -1,0 +1,132 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0 font-weight-bold"><i class="fas fa-ticket-alt text-primary mr-2"></i>Event Entry Ticket</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+          <li class="breadcrumb-item active">Ticket</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        
+        <!-- TICKET CONTAINER TO BE CAPTURED -->
+        <div id="ticketCard" class="card card-primary card-outline shadow-lg bg-white" style="border-radius: 16px; overflow: hidden;">
+          <div class="card-header bg-primary text-white text-center py-3">
+            <h4 class="font-weight-bold mb-0">{{ reg.event.name }}</h4>
+            <span class="text-light text-xs text-uppercase letter-spacing">Official Admission Pass</span>
+          </div>
+          
+          <div class="card-body text-center p-4">
+            <div class="my-3">
+              {% if reg.ticket_qr %}
+                <img id="ticketQrImage" src="{{ reg.ticket_qr.url }}" alt="Ticket QR Code" class="img-thumbnail shadow-sm p-2" style="width: 210px; height: 210px;" crossorigin="anonymous">
+              {% else %}
+                <div class="alert alert-warning">No QR code generated.</div>
+              {% endif %}
+            </div>
+
+            <span class="badge badge-success px-3 py-2 text-sm mb-4">
+              <i class="fas fa-check-circle mr-1"></i> VALID TICKET
+            </span>
+
+            <table class="table table-bordered text-left mb-0">
+              <tr>
+                <th class="bg-light" style="width: 35%;">Attendee:</th>
+                <td class="font-weight-bold">{{ reg.full_name }}</td>
+              </tr>
+              <tr>
+                <th class="bg-light">College / Org:</th>
+                <td>{{ reg.college }}</td>
+              </tr>
+              <tr>
+                <th class="bg-light">Event Date:</th>
+                <td>{{ reg.event.event_date|date:"M d, Y" }}</td>
+              </tr>
+              <tr>
+                <th class="bg-light">Venue:</th>
+                <td>{{ reg.event.venue }}</td>
+              </tr>
+              <tr>
+                <th class="bg-light">Ticket ID:</th>
+                <td><small class="text-muted font-monospace">{{ reg.ticket_id }}</small></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- DOWNLOAD ACTION BUTTONS -->
+        <div class="row mt-3 mb-4">
+          <div class="col-6 pr-2">
+            <button onclick="downloadAsImage()" class="btn btn-outline-success btn-block font-weight-bold shadow-sm py-2">
+              <i class="fas fa-image mr-1"></i> Download Image
+            </button>
+          </div>
+          <div class="col-6 pl-2">
+            <button onclick="downloadAsPdf()" class="btn btn-danger btn-block font-weight-bold shadow-sm py-2">
+              <i class="fas fa-file-pdf mr-1"></i> Download PDF
+            </button>
+          </div>
+          <div class="col-12 mt-2">
+            <button onclick="window.print()" class="btn btn-light btn-block text-muted border py-1">
+              <i class="fas fa-print mr-1"></i> Print
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- html2canvas and jsPDF libraries via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+  const ticketElement = document.getElementById("ticketCard");
+  const fileNameBase = "Ticket_{{ reg.full_name|slugify }}_{{ reg.event.name|slugify }}";
+
+  // 1. Download As PNG Image
+  function downloadAsImage() {
+    html2canvas(ticketElement, { scale: 3, useCORS: true }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `${fileNameBase}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  // 2. Download As PDF
+  function downloadAsPdf() {
+    html2canvas(ticketElement, { scale: 3, useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = 140; 
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const xPos = (pageWidth - imgWidth) / 2;
+      const yPos = 25; 
+
+      pdf.addImage(imgData, "PNG", xPos, yPos, imgWidth, imgHeight);
+      pdf.save(`${fileNameBase}.pdf`);
+    });
+  }
+</script>
+{% endblock %}

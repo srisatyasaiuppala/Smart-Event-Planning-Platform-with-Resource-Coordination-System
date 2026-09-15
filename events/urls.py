@@ -107,4 +107,16 @@ urlpatterns = [
         views.public_event_registration,
         name="public_event_registration",
     ),
+    path('api/global-ai/', views.global_ai_chatbot_reply, name='global_ai_chatbot_reply'),
+    path('ticket/<int:reg_id>/', views.my_ticket_view, name='my_ticket'),
+    path(
+        'attendance/scan/',
+        views.scan_attendance_view,
+        name='scan_attendance',
+    ),
+    path(
+        'attendance/verify/<uuid:ticket_id>/',
+        views.verify_ticket_attendance,
+        name='verify_ticket',
+    ),
 ]

@@ -130,10 +130,10 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_dashboard' %}{% endif %}" class="nav-link">Accueil</a>
+        <a href="{% if user.is_staff or user.is_superuser %}{% url 'dashboard' %}{% else %}{% url 'user_dashboard' %}{% endif %}" class="nav-link">Home</a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link">Contact</a>
+        <a href="#" class="nav-link" data-toggle="modal" data-target="#contactModal">Contact</a>
       </li>
     </ul>
 
@@ -378,6 +378,12 @@
                 </li>
               </ul>
             </li>
+            <li class="nav-item">
+              <a href="{% url 'scan_attendance' %}" class="nav-link">
+                <i class="fas fa-qrcode nav-icon text-success"></i>
+                <p>Scan Ticket Attendance</p>
+              </a>
+            </li>
 
             <!-- DEDICATED REGISTRATION QR PAGE LINK -->
             <li class="nav-item">
@@ -605,6 +611,93 @@
 
 </div>
 
+<!-- ================= CONTACT SUPPORT MODAL ================= -->
+<div class="modal fade" id="contactModal" tabindex="-1" role="dialog" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title font-weight-bold" id="contactModalLabel">
+          <i class="fas fa-headset mr-2"></i>Contact & Support
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-3">
+          <i class="fas fa-envelope-open-text fa-3x text-primary mb-2"></i>
+          <p class="text-muted">Need assistance with event registration, attendance, or technical inquiries?</p>
+        </div>
+        <ul class="list-group list-group-unbordered mb-3">
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-envelope text-info mr-2"></i><strong>Email Support:</strong></span>
+            <a href="mailto:support@eventmanagement.com" class="text-primary font-weight-bold">support@eventmanagement.com</a>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-phone-alt text-success mr-2"></i><strong>Helpdesk:</strong></span>
+            <span class="text-muted">+91 9492172259</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-clock text-warning mr-2"></i><strong>Working Hours:</strong></span>
+            <span class="text-muted">Mon - Fri (9:00 AM - 6:00 PM)</span>
+          </li>
+        </ul>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <a href="mailto:support@eventmanagement.com" class="btn btn-primary">
+          <i class="fas fa-paper-plane mr-1"></i> Send Mail
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FLOATING AI CHATBOT ================= -->
+<!-- Floating AI Launcher Button (Bottom Right) -->
+<div id="aiFloatingBtn" onclick="toggleModernAiChat()" style="position: fixed; bottom: 25px; right: 25px; width: 56px; height: 56px; background-color: #0284c7; color: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35); cursor: pointer; z-index: 99999; transition: transform 0.2s ease;">
+    <i class="fas fa-robot" id="chatIcon" style="font-size: 24px;"></i>
+</div>
+
+<!-- Modern AI Chat Popup Modal -->
+<div id="modernAiBox" style="display: none; position: fixed; bottom: 95px; right: 25px; width: 370px; height: 500px; background-color: #ffffff; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.18); z-index: 99999; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    
+    <!-- Top Header -->
+    <div style="background-color: #0284c7; color: white; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 34px; height: 34px; background-color: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-sparkles" style="font-size: 1.1rem;"></i>
+            </div>
+            <div>
+                <div style="font-weight: 600; font-size: 0.95rem; line-height: 1.2;">AI Assistant</div>
+                <div style="font-size: 0.75rem; color: #bae6fd;">Ready to answer any question</div>
+            </div>
+        </div>
+        <button onclick="toggleModernAiChat()" style="background: none; border: none; color: white; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="modernAiMessages" style="flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #f8fafc;">
+        <div style="align-self: flex-start; background: #ffffff; color: #334155; padding: 10px 14px; border-radius: 12px 12px 12px 2px; font-size: 0.88rem; max-width: 88%; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+            Hello! Ask me any question, real-time live search, code, or general doubts.
+        </div>
+    </div>
+
+    <!-- Bottom Input Bar -->
+    <form onsubmit="handleSendAiMessage(event)" style="display: flex; background: #ffffff; padding: 10px 14px; gap: 8px; align-items: center; border-top: 1px solid #e2e8f0; margin: 0;">
+        <input 
+            type="text" 
+            id="modernAiInput" 
+            placeholder="Ask anything..." 
+            style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 14px; font-size: 0.88rem; outline: none; background: #f8fafc; color: #1e293b;"
+            required 
+        />
+        <button type="submit" style="background-color: #0284c7; color: white; border: none; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s;">
+            <i class="fas fa-paper-plane" style="font-size: 13px;"></i>
+        </button>
+    </form>
+</div>
+
 <!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
@@ -612,11 +705,73 @@
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 
 <script>
+function formatBotText(raw) {
+    if (!raw) return "";
+    return raw
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^\s*\*\s+(.*$)/gim, '• $1')
+        .replace(/\n/g, '<br/>');
+}
+
+function toggleModernAiChat() {
+    var box = document.getElementById("modernAiBox");
+    if (box.style.display === "none" || box.style.display === "") {
+        box.style.display = "flex";
+        document.getElementById("modernAiInput").focus();
+    } else {
+        box.style.display = "none";
+    }
+}
+
+function handleSendAiMessage(e) {
+    e.preventDefault();
+    var input = document.getElementById("modernAiInput");
+    var userText = input.value.trim();
+    if (!userText) return;
+
+    var chatArea = document.getElementById("modernAiMessages");
+
+    var userBubble = document.createElement("div");
+    userBubble.style.cssText = "align-self: flex-end; background: #0284c7; color: white; padding: 10px 14px; border-radius: 12px 12px 2px 12px; font-size: 0.88rem; max-width: 85%; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);";
+    userBubble.innerText = userText;
+    chatArea.appendChild(userBubble);
+    input.value = "";
+    chatArea.scrollTop = chatArea.scrollHeight;
+
+    var loading = document.createElement("div");
+    loading.id = "modernAiLoading";
+    loading.style.cssText = "align-self: flex-start; background: #ffffff; color: #64748b; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; border: 1px solid #e2e8f0;";
+    loading.innerText = "Searching & thinking...";
+    chatArea.appendChild(loading);
+    chatArea.scrollTop = chatArea.scrollHeight;
+
+    fetch("/api/global-ai/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userText })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("modernAiLoading")?.remove();
+        var botBubble = document.createElement("div");
+        botBubble.style.cssText = "align-self: flex-start; background: #ffffff; color: #1e293b; padding: 10px 14px; border-radius: 12px 12px 12px 2px; font-size: 0.88rem; max-width: 88%; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); line-height: 1.45;";
+        botBubble.innerHTML = formatBotText(data.reply);
+        chatArea.appendChild(botBubble);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    })
+    .catch(() => {
+        document.getElementById("modernAiLoading")?.remove();
+        var errBubble = document.createElement("div");
+        errBubble.style.cssText = "align-self: flex-start; background: #fee2e2; color: #dc2626; padding: 8px 12px; border-radius: 8px; font-size: 0.82rem;";
+        errBubble.innerText = "Error connecting to AI service.";
+        chatArea.appendChild(errBubble);
+    });
+}
+
 $(document).ready(function() {
 
   $('.dropdown-toggle, [data-toggle="dropdown"]').dropdown();
 
-  // Load Custom Dynamic Colors
   const savedNavbarColor  = localStorage.getItem('app-navbar-color')  || '#007bff';
   const savedSidebarColor = localStorage.getItem('app-sidebar-color') || '#1e293b';
   const savedFooterColor  = localStorage.getItem('app-footer-color')  || '#0d1117';
@@ -638,10 +793,8 @@ $(document).ready(function() {
     {% endif %}
   }
 
-  // Apply colors on initial load
   applyCustomColors(savedNavbarColor, savedSidebarColor, savedFooterColor, savedDashTitle);
 
-  // Live Pickers Real-Time Preview
   $('#colorPickerPrimary').on('input', function() {
     document.documentElement.style.setProperty('--custom-navbar-bg', $(this).val());
   });
@@ -652,7 +805,6 @@ $(document).ready(function() {
     document.documentElement.style.setProperty('--custom-footer-bg', $(this).val());
   });
 
-  // Save Customization
   $('#btnSaveColors').click(function() {
     const nav = $('#colorPickerPrimary').val();
     const side = $('#colorPickerSidebar').val();
@@ -668,7 +820,6 @@ $(document).ready(function() {
     alert('Customization Saved Successfully!');
   });
 
-  // Font Size
   let currentFontSize = parseInt(localStorage.getItem('app-font-size')) || 16;
   function updateFontSize(size) {
     currentFontSize = size;
@@ -678,7 +829,6 @@ $(document).ready(function() {
   }
   updateFontSize(currentFontSize);
 
-  // Stored UI Preferences
   if (localStorage.getItem('theme-mode') === 'dark') {
     $('body').addClass('dark-mode');
     $('#btn-mode-dark').addClass('active').siblings().removeClass('active');
@@ -736,7 +886,6 @@ $(document).ready(function() {
     }
   });
 
-  // Event Handlers
   $('#btn-font-inc').click(function() {
     if (currentFontSize < 22) updateFontSize(currentFontSize + 1);
   });
@@ -814,7 +963,6 @@ $(document).ready(function() {
     this.checked ? localStorage.setItem('sw-side-legacy', '1') : localStorage.removeItem('sw-side-legacy');
   });
 
-  // Reset / Clear Customizer
   $('#btn-reset-customizer').click(function() {
     localStorage.clear();
     location.reload();

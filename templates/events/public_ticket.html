@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admission Pass | {{ reg.event.name }}</title>
+
+  <!-- Google Font & Font Awesome -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700&display=fallback">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Bootstrap 4 / AdminLTE -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+
+  <style>
+    body {
+      background: #f1f5f9;
+      font-family: 'Source Sans Pro', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 15px;
+    }
+    .ticket-wrapper {
+      width: 100%;
+      max-width: 480px;
+    }
+    .ticket-card {
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+    }
+    .ticket-header {
+      background: #0284c7;
+      color: #ffffff;
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .table td, .table th {
+      padding: 10px 14px;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="ticket-wrapper">
+  
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-check-circle mr-1"></i> {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- TICKET CARD FOR EXPORT -->
+  <div id="ticketCard" class="ticket-card mb-3">
+    <div class="ticket-header">
+      <h3 class="font-weight-bold mb-1">{{ reg.event.name }}</h3>
+      <span class="text-light text-xs text-uppercase letter-spacing font-weight-bold">Official Event Entry Pass</span>
+    </div>
+
+    <div class="p-4 text-center">
+      <div class="mb-3">
+        {% if reg.ticket_qr %}
+          <img id="ticketQrImage" src="{{ reg.ticket_qr.url }}" alt="Ticket QR" class="img-thumbnail shadow-sm p-2" style="width: 200px; height: 200px;" crossorigin="anonymous">
+        {% else %}
+          <div class="alert alert-warning">Generating QR...</div>
+        {% endif %}
+      </div>
+
+      <span class="badge badge-success px-3 py-2 text-sm mb-3">
+        <i class="fas fa-check-circle mr-1"></i> VALID ENTRY TICKET
+      </span>
+
+      <table class="table table-bordered text-left mb-0">
+        <tr>
+          <th class="bg-light" style="width: 38%;">Attendee:</th>
+          <td class="font-weight-bold">{{ reg.full_name }}</td>
+        </tr>
+        <tr>
+          <th class="bg-light">College / Org:</th>
+          <td>{{ reg.college }}</td>
+        </tr>
+        <tr>
+          <th class="bg-light">Event Date:</th>
+          <td>{{ reg.event.event_date|date:"M d, Y" }}</td>
+        </tr>
+        <tr>
+          <th class="bg-light">Venue:</th>
+          <td>{{ reg.event.venue }}</td>
+        </tr>
+        <tr>
+          <th class="bg-light">Ticket ID:</th>
+          <td><small class="text-muted font-monospace">{{ reg.ticket_id }}</small></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="row">
+    <div class="col-6 pr-2">
+      <button onclick="downloadAsImage()" class="btn btn-outline-success btn-block font-weight-bold shadow-sm py-2">
+        <i class="fas fa-image mr-1"></i> Download PNG
+      </button>
+    </div>
+    <div class="col-6 pl-2">
+      <button onclick="downloadAsPdf()" class="btn btn-danger btn-block font-weight-bold shadow-sm py-2">
+        <i class="fas fa-file-pdf mr-1"></i> Download PDF
+      </button>
+    </div>
+    <div class="col-12 mt-2">
+      <button onclick="window.print()" class="btn btn-light btn-block text-muted border py-2">
+        <i class="fas fa-print mr-1"></i> Print Ticket
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Download scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+  const ticketElement = document.getElementById("ticketCard");
+  const fileNameBase = "Ticket_{{ reg.full_name|slugify }}_{{ reg.event.name|slugify }}";
+
+  function downloadAsImage() {
+    html2canvas(ticketElement, { scale: 3, useCORS: true }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `${fileNameBase}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function downloadAsPdf() {
+    html2canvas(ticketElement, { scale: 3, useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = 140;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const xPos = (pageWidth - imgWidth) / 2;
+      pdf.addImage(imgData, "PNG", xPos, 25, imgWidth, imgHeight);
+      pdf.save(`${fileNameBase}.pdf`);
+    });
+  }
+</script>
+</body>
+</html>
