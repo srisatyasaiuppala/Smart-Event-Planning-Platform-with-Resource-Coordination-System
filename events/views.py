@@ -1,7 +1,7 @@
 from datetime import date
 from io import BytesIO
 import json
-import random
+import random,os
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -1253,7 +1253,7 @@ def global_ai_chatbot_reply(request):
             {"reply": "Please enter a valid question."}, status=400
         )
       
-      client = genai.Client(api_key="REMOVED_GEMINI_API_KEY")
+      client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
       config = types.GenerateContentConfig(
           tools=[types.Tool(google_search=types.GoogleSearch())],
